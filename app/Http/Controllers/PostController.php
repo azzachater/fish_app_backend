@@ -31,16 +31,22 @@ class PostController extends Controller implements HasMiddleware
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
-        $fields = $request->validate([
-            'title' => 'required|max:255',
-            'body' => 'required'
-        ]);
+{
+    $fields = $request->validate([
+        'post_text' => 'nullable|string',
+        'post_image' => 'nullable|string',
+    ]);
 
-        $post =$request->user()->posts()->create($fields);
-
-        return $post;
+    // Vérifier qu'au moins un des champs est rempli
+    if (empty($fields['post_text']) && empty($fields['post_image'])) {
+        return response()->json(['error' => 'Un post doit contenir du texte ou une image.'], 400);
     }
+
+    $post = $request->user()->posts()->create($fields);
+
+    return response()->json($post, 201);
+}
+
 
     /**
      * Display the specified resource.
@@ -54,16 +60,23 @@ class PostController extends Controller implements HasMiddleware
      * Update the specified resource in storage.
      */
     public function update(Request $request, Post $post)
-    {
-        Gate::authorize('modify', $post);
-        $fields = $request->validate([
-            'title' => 'required|max:255',
-            'body' => 'required'
-        ]);
-        $post->update($fields);
+{
+    Gate::authorize('modify', $post);
 
-        return $post;
+    $fields = $request->validate([
+        'post_text' => 'nullable|string',
+        'post_image' => 'nullable|string',
+    ]);
+
+    // Vérifier qu'au moins un des champs est rempli
+    if (empty($fields['post_text']) && empty($fields['post_image'])) {
+        return response()->json(['error' => 'Un post doit contenir du texte ou une image.'], 400);
     }
+
+    $post->update($fields);
+
+    return response()->json($post);
+}
 
     /**
      * Remove the specified resource from storage.
