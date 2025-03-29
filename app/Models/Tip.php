@@ -13,8 +13,6 @@ class Tip extends Model
         'user_id',
         'title',
         'description',
-        'category',
-        'image',
     ];
     public function user(){
         return $this->belongsTo(User::class);

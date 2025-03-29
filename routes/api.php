@@ -61,6 +61,8 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::apiResource('fishing_logs',FishingLogController::class);
 Route::apiResource('tips',TipController::class)->middleware
 ('auth:sanctum');
+Route::put('/tips/{id}', [TipController::class, 'update'])->middleware
+('auth:sanctum');
 Route::apiResource('spots',SpotController::class);
 
 Route::middleware('auth:sanctum')->group(function () {
