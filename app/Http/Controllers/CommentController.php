@@ -1,33 +1,33 @@
 <?php
 namespace App\Http\Controllers;
-
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Comment;
 use App\Models\Post;
-use App\Models\Spot;
 
-class CommentController extends Controller
+class CommentController extends Controller implements HasMiddleware
 {
-    public function store(Request $request, $type, $id)
+    public static function middleware()
+    {
+        return [
+            new Middleware('auth:sanctum', except: ['index'])
+        ];
+    }
+    public function store(Request $request, $id)
     {
         // Validation des données
         $request->validate([
             'content' => 'required|string',
         ]);
 
-        // Vérifier si le type est correct et récupérer l'entité correspondante
-        $commentable = null;
-        if ($type === 'spot') {
-            $commentable = Spot::findOrFail($id);
-        } elseif ($type === 'post') {
-            $commentable = Post::findOrFail($id);
-        } else {
-            return response()->json(['error' => 'Invalid type'], 400);
-        }
+        // Vérifier que le post existe
+        $post = Post::findOrFail($id);
 
-        // Créer un commentaire lié à l'entité (Post ou Spot)
-        $comment = $commentable->comments()->create([
+        // Créer un commentaire lié au post
+        $comment = $post->comments()->create([
             'content' => $request->content,
             'user_id' => auth()->id(),
         ]);
@@ -38,24 +38,18 @@ class CommentController extends Controller
         ], 201);
     }
 
-    public function index($type, $id)
+    public function index($id)
     {
-        // Vérifier si le type est correct et récupérer l'entité correspondante
-        if ($type === 'spot') {
-            $commentable = Spot::findOrFail($id);
-        } elseif ($type === 'post') {
-            $commentable = Post::findOrFail($id);
-        } else {
-            return response()->json(['error' => 'Invalid type'], 400);
-        }
+        // Vérifier que le post existe
+        $post = Post::findOrFail($id);
 
         // Récupérer les commentaires avec les informations des utilisateurs
-        $comments = $commentable->comments()->with('user')->get();
+        $comments = $post->comments()->with('user')->get();
 
         return response()->json($comments, 200);
     }
 
-    public function destroy($type, $id, $commentId)
+    public function destroy($id, $commentId)
     {
         $comment = Comment::findOrFail($commentId);
 

@@ -65,16 +65,13 @@ Route::put('/tips/{id}', [TipController::class, 'update'])->middleware
 ('auth:sanctum');
 Route::apiResource('spots',SpotController::class);
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/{type}/{id}/comments', [CommentController::class, 'store'])
-        ->where('type', 'spot|post'); // Ajouter un commentaire
+Route::get('/posts/{postId}/comments', [CommentController::class, 'index']);
+Route::post('/posts/{postId}/comments', [CommentController::class, 'store'])->middleware
+('auth:sanctum');
+Route::delete('/posts/{postId}/comments/{commentId}', [CommentController::class, 'destroy'])->middleware
+('auth:sanctum');
 
-    Route::get('/{type}/{id}/comments', [CommentController::class, 'index'])
-        ->where('type', 'spot|post'); // Voir tous les commentaires d’un post ou spot
 
-    Route::delete('/{type}/{id}/comment/{commentId}', [CommentController::class, 'destroy'])
-        ->where('type', 'spot|post'); // Supprimer un commentaire
-});
 
 
 Route::post('/posts/{postId}/share', [ShareController::class, 'sharePost'])->middleware('auth:sanctum');
