@@ -14,17 +14,29 @@ use App\Http\Controllers\SpotController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ShareController;
 use App\Http\Controllers\ProfilController;
+use App\Http\Controllers\ProfileController;
+
 
 Route::get('/user', function (Request $request) { 
     return $request->user(); 
       })->middleware('auth: sanctum');
+Route::middleware('auth:sanctum')->group(function () {
+  Route::get('/user/{userId}/profile', [ProfileController::class, 'show']);
+  Route::post('/profile', [ProfileController::class, 'update']);
+    });
+Route::get('users', [AuthController::class, 'getAllUsers']);
+
+Route::get('user/{id}', [AuthController::class, 'CheckUser']);
+
+Route::get('/me', [AuthController::class, 'me'])->middleware
+('auth:sanctum');
 
 Route::apiResource('posts', PostController::class)->middleware
 ('auth:sanctum');
 
 Route::get('posts/other',[PostController::class,'getOtherUsersPosts'])->middleware('auth:sanctum');
 
-Route::get('user/{id}', [AuthController::class, 'CheckUser']);
+
 
 Route::apiResource('products',ProductController::class)->middleware
 ('auth:sanctum');
