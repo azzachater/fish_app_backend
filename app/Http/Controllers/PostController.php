@@ -23,24 +23,24 @@ class PostController extends Controller implements HasMiddleware
      * Display a listing of the resource.
      */
     public function index()
-{
-    return response()->json(Post::with('user', 'likes')->get()->map(function ($post) {
-        return [
-            'id' => (string) $post->id, // Convertir en string
-            'user' => [
-                'id' => (string) $post->user->id, // Inclure l'objet User
-                'name' => $post->user->name, 
-            ],
-            'post_text' => $post->post_text ?? '',
-            'post_image' => $post->post_image ?? '',
-            'created_at' => $post->created_at,
-            'updated_at' => $post->updated_at,
-            'like_count' => $post->likes->count(), // Ajouter le nombre de likes
-            'is_liked' => $post->likes->contains('user_id', Auth::id()), // Vérifier si l'utilisateur a liké
-        ];
-    }));
-}
-
+    {
+        return response()->json(Post::with('user.profile', 'likes')->get()->map(function ($post) {
+            return [
+                'id' => (string) $post->id, // Convertir en string
+                'user' => [
+                    'id' => (string) $post->user->id, // Inclure l'objet User
+                    'name' => $post->user->name, 
+                    'avatar' => $post->user->profile->avatar ?? null, // Inclure l'avatar
+                ],
+                'post_text' => $post->post_text ?? '',
+                'post_image' => $post->post_image ?? '',
+                'created_at' => $post->created_at,
+                'updated_at' => $post->updated_at,
+                'like_count' => $post->likes->count(), // Ajouter le nombre de likes
+                'is_liked' => $post->likes->contains('user_id', Auth::id()), // Vérifier si l'utilisateur a liké
+            ];
+        }));
+    }
 
     /**
      * Store a newly created resource in storage.
@@ -63,6 +63,7 @@ class PostController extends Controller implements HasMiddleware
             'user' => [
                 'id' => (string) $post->user->id,
                 'name' => $post->user->name,
+                'avatar' => $post->user->profile->avatar ?? null, // Inclure l'avatar
             ],
             'post_text' => $post->post_text ?? '', // Remplacer null par une chaîne vide
             'post_image' => $post->post_image ?? '', // Remplacer null par une chaîne vide
@@ -71,7 +72,6 @@ class PostController extends Controller implements HasMiddleware
             'like_count' => $post->likes->count(),
             'is_liked' => $post->likes->contains('user_id', Auth::id()),
         ]);
-        
     }
 
     /**
@@ -84,6 +84,7 @@ class PostController extends Controller implements HasMiddleware
             'user' => [
                 'id' => (string) $post->user->id,
                 'name' => $post->user->name,
+                'avatar' => $post->user->profile->avatar ?? null, // Inclure l'avatar
             ],
             'post_text' => $post->post_text ?? '',
             'post_image' => $post->post_image ?? '',
@@ -117,6 +118,7 @@ class PostController extends Controller implements HasMiddleware
             'user' => [
                 'id' => (string) $post->user->id,
                 'name' => $post->user->name,
+                'avatar' => $post->user->profile->avatar ?? null, // Inclure l'avatar
             ],
             'post_text' => $post->post_text ?? '',
             'post_image' => $post->post_image ?? '',

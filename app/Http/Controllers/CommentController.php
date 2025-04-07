@@ -16,6 +16,7 @@ class CommentController extends Controller implements HasMiddleware
             new Middleware('auth:sanctum', except: ['index'])
         ];
     }
+
     public function store(Request $request, $id)
     {
         // Validation des données
@@ -32,9 +33,28 @@ class CommentController extends Controller implements HasMiddleware
             'user_id' => auth()->id(),
         ]);
 
+        // Charger les relations nécessaires avant de retourner la réponse
+        $comment->load(['user.profile']);
+
         return response()->json([
             'message' => 'Comment added successfully',
-            'comment' => $comment
+            'comment' => [
+                'id' => $comment->id,
+                'post_id' => $comment->post_id,
+                'user_id' => $comment->user_id,
+                'content' => $comment->content,
+                'created_at' => $comment->created_at,
+                'updated_at' => $comment->updated_at,
+                'user' => [
+                    'id' => $comment->user->id,
+                    'name' => $comment->user->name,
+                    'email' => $comment->user->email,
+                    'avatar' => $comment->user->profile->avatar ?? null,
+                    'email_verified_at' => $comment->user->email_verified_at,
+                    'created_at' => $comment->user->created_at,
+                    'updated_at' => $comment->user->updated_at
+                ]
+            ]
         ], 201);
     }
 
@@ -43,8 +63,29 @@ class CommentController extends Controller implements HasMiddleware
         // Vérifier que le post existe
         $post = Post::findOrFail($id);
 
-        // Récupérer les commentaires avec les informations des utilisateurs
-        $comments = $post->comments()->with('user')->get();
+        // Récupérer les commentaires avec les informations des utilisateurs et leur profil
+        $comments = $post->comments()
+            ->with(['user.profile'])
+            ->get()
+            ->map(function ($comment) {
+                return [
+                    'id' => $comment->id,
+                    'post_id' => $comment->post_id,
+                    'user_id' => $comment->user_id,
+                    'content' => $comment->content,
+                    'created_at' => $comment->created_at,
+                    'updated_at' => $comment->updated_at,
+                    'user' => [
+                        'id' => $comment->user->id,
+                        'name' => $comment->user->name,
+                        'email' => $comment->user->email,
+                        'avatar' => $comment->user->profile->avatar ?? null,
+                        'email_verified_at' => $comment->user->email_verified_at,
+                        'created_at' => $comment->user->created_at,
+                        'updated_at' => $comment->user->updated_at
+                    ]
+                ];
+            });
 
         return response()->json($comments, 200);
     }

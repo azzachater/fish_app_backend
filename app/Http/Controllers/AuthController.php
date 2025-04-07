@@ -20,17 +20,19 @@ class AuthController extends Controller
     }
     public function getAllUsers()
 {
-    $users = User::all();
+    $users = User::with('profile')->get(); // <-- charge aussi les profils
     return response()->json($users, 200);
 }
+
 public function CheckUser($id)
 {
-    $user = User::find($id);
+    $user = User::with('profile')->find($id); // 👈 charge aussi le profil
     if (!$user) {
         return response()->json(['error' => 'User not found'], 404);
     }
     return response()->json($user);
 }
+
     public function register(Request $request)
 {
     $request->validate([
