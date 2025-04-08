@@ -85,6 +85,15 @@ public function profile()
     return $this->hasOne(Profile::class);
 }
 
-    
+public function sentMessages()
+{
+    return $this->hasMany(Message::class, 'sender_id');
+}
+
+public function conversations()
+{
+    return Conversation::where('user_one_id', $this->id)
+            ->orWhere('user_two_id', $this->id);
+}  
 
 }

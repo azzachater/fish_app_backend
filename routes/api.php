@@ -15,8 +15,13 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ShareController;
 use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ChatController;
 
-
+Route::middleware('auth:sanctum')->group(function () {
+  Route::post('/message/send/{receiver_id}', [ChatController::class, 'send']);
+  Route::get('/conversations', [ChatController::class, 'getMyConversations']);
+  Route::get('/conversations/{id}', [ChatController::class, 'getMessages']);
+});
 Route::get('/user', function (Request $request) { 
     return $request->user(); 
       })->middleware('auth: sanctum');
@@ -89,3 +94,4 @@ Route::delete('/posts/{postId}/comments/{commentId}', [CommentController::class,
 Route::post('/posts/{postId}/share', [ShareController::class, 'sharePost'])->middleware('auth:sanctum');
 Route::get('/profil/{id}', [ProfilController::class, 'show'])->middleware('auth:sanctum');
 Route::put('/profil/{id}', [ProfilController::class, 'update'])->middleware('auth:sanctum');
+
