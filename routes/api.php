@@ -15,16 +15,41 @@ use App\Http\Controllers\SpotController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ShareController;
 use App\Http\Controllers\ProfilController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ChatController;
 
+<<<<<<< HEAD
+Route::middleware('auth:sanctum')->group(function () {
+  Route::post('/message/send/{receiver_id}', [ChatController::class, 'send']);
+  Route::get('/conversations', [ChatController::class, 'getMyConversations']);
+  Route::get('/conversations/{id}', [ChatController::class, 'getMessages']);
+  Route::post('conversations/{conversation_id}/mark-as-read', [ChatController::class, 'markAsRead']);
+  Route::get('/conversations/{id}/unread-count', [ChatController::class, 'getUnreadCount']);
+});
+Route::get('/user', function (Request $request) { 
+    return $request->user(); 
+      })->middleware('auth: sanctum');
+Route::middleware('auth:sanctum')->group(function () {
+  Route::get('/user/{userId}/profile', [ProfileController::class, 'show']);
+  Route::post('/profile', [ProfileController::class, 'update']);
+    });
+Route::get('users', [AuthController::class, 'getAllUsers']);
+
+Route::get('user/{id}', [AuthController::class, 'CheckUser']);
+
+Route::get('/me', [AuthController::class, 'me'])->middleware
+('auth:sanctum');
+=======
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth: sanctum');
+>>>>>>> main
 
 Route::apiResource('posts', PostController::class)->middleware('auth:sanctum');
 
 Route::get('posts/other', [PostController::class, 'getOtherUsersPosts'])->middleware('auth:sanctum');
 
-Route::get('user/{id}', [AuthController::class, 'CheckUser']);
+
 
 Route::apiResource('products', ProductController::class)->middleware('auth:sanctum');
 Route::middleware('auth:sanctum')->group(function () {
@@ -54,22 +79,29 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/posts/{postId}/liked-users', [LikeController::class, 'likedUsers']);
 });
 
+<<<<<<< HEAD
+Route::apiResource('fishing_logs',FishingLogController::class);
+Route::apiResource('tips',TipController::class)->middleware
+('auth:sanctum');
+Route::put('/tips/{id}', [TipController::class, 'update'])->middleware
+('auth:sanctum');
+Route::apiResource('spots',SpotController::class);
+=======
 Route::apiResource('logs', FishingLogController::class);
 Route::apiResource('tips', TipController::class)->middleware('auth:sanctum');
 Route::apiResource('spots', SpotController::class);
+>>>>>>> main
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/{type}/{id}/comments', [CommentController::class, 'store'])
-        ->where('type', 'spot|post'); // Ajouter un commentaire
+Route::get('/posts/{postId}/comments', [CommentController::class, 'index']);
+Route::post('/posts/{postId}/comments', [CommentController::class, 'store'])->middleware
+('auth:sanctum');
+Route::delete('/posts/{postId}/comments/{commentId}', [CommentController::class, 'destroy'])->middleware
+('auth:sanctum');
 
-    Route::get('/{type}/{id}/comments', [CommentController::class, 'index'])
-        ->where('type', 'spot|post'); // Voir tous les commentaires d’un post ou spot
 
-    Route::delete('/{type}/{id}/comment/{commentId}', [CommentController::class, 'destroy'])
-        ->where('type', 'spot|post'); // Supprimer un commentaire
-});
 
 
 Route::post('/posts/{postId}/share', [ShareController::class, 'sharePost'])->middleware('auth:sanctum');
 Route::get('/profil/{id}', [ProfilController::class, 'show'])->middleware('auth:sanctum');
 Route::put('/profil/{id}', [ProfilController::class, 'update'])->middleware('auth:sanctum');
+

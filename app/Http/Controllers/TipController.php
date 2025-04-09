@@ -16,10 +16,8 @@ class TipController extends Controller implements HasMiddleware
     }
     //afficher la liste de tips de l'utilisateur connecté 
     public function index(){
-        
-        $tips=Tip::where('user_id', Auth::id())->get();
+        $tips = Tip::all(); // Récupère tous les tips, peu importe l'utilisateur
         return response()->json($tips);
-
     }
     //afficher les detailles d'un conseil/astuce specifique
     public function show($id){
@@ -31,8 +29,6 @@ class TipController extends Controller implements HasMiddleware
         $fields=$request->validate([
             'title'=>'required|string|max:255',
             'description'=>'required|string|max:255',
-            'category'=>'required|string|max:255',
-            'image'=>'required|max:255',
         ]);
 
         $tip =$request->user()->tips()->create($fields);
@@ -44,15 +40,13 @@ class TipController extends Controller implements HasMiddleware
         $request->validate([
             'title'=>'required|string',
             'description'=>'required|string',
-            'category'=>'required|string',
-            'image'=>'required',
         ]);
 
         //njibou conseil!:astuce mtaa connected user
         $tip=Tip::where('user_id', Auth::id())->findOrFail($id);
 
         //nbadlou juste les donnees hedhom bech n'empechiw les autre donnees d'etre modifier accidentalement
-        $tip->update($request->only(['title', 'description', 'category', 'image']));
+        $tip->update($request->only(['title', 'description']));
         return response()->json($tip);
     }
 

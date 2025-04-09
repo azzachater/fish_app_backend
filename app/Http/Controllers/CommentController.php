@@ -1,61 +1,96 @@
 <?php
 namespace App\Http\Controllers;
-
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Comment;
 use App\Models\Post;
-use App\Models\Spot;
 
-class CommentController extends Controller
+class CommentController extends Controller implements HasMiddleware
 {
-    public function store(Request $request, $type, $id)
+    public static function middleware()
+    {
+        return [
+            new Middleware('auth:sanctum', except: ['index'])
+        ];
+    }
+
+    public function store(Request $request, $id)
     {
         // Validation des données
         $request->validate([
             'content' => 'required|string',
         ]);
 
-        // Vérifier si le type est correct et récupérer l'entité correspondante
-        $commentable = null;
-        if ($type === 'spot') {
-            $commentable = Spot::findOrFail($id);
-        } elseif ($type === 'post') {
-            $commentable = Post::findOrFail($id);
-        } else {
-            return response()->json(['error' => 'Invalid type'], 400);
-        }
+        // Vérifier que le post existe
+        $post = Post::findOrFail($id);
 
-        // Créer un commentaire lié à l'entité (Post ou Spot)
-        $comment = $commentable->comments()->create([
+        // Créer un commentaire lié au post
+        $comment = $post->comments()->create([
             'content' => $request->content,
             'user_id' => auth()->id(),
         ]);
 
+        // Charger les relations nécessaires avant de retourner la réponse
+        $comment->load(['user.profile']);
+
         return response()->json([
             'message' => 'Comment added successfully',
-            'comment' => $comment
+            'comment' => [
+                'id' => $comment->id,
+                'post_id' => $comment->post_id,
+                'user_id' => $comment->user_id,
+                'content' => $comment->content,
+                'created_at' => $comment->created_at,
+                'updated_at' => $comment->updated_at,
+                'user' => [
+                    'id' => $comment->user->id,
+                    'name' => $comment->user->name,
+                    'email' => $comment->user->email,
+                    'avatar' => $comment->user->profile->avatar ?? null,
+                    'email_verified_at' => $comment->user->email_verified_at,
+                    'created_at' => $comment->user->created_at,
+                    'updated_at' => $comment->user->updated_at
+                ]
+            ]
         ], 201);
     }
 
-    public function index($type, $id)
+    public function index($id)
     {
-        // Vérifier si le type est correct et récupérer l'entité correspondante
-        if ($type === 'spot') {
-            $commentable = Spot::findOrFail($id);
-        } elseif ($type === 'post') {
-            $commentable = Post::findOrFail($id);
-        } else {
-            return response()->json(['error' => 'Invalid type'], 400);
-        }
+        // Vérifier que le post existe
+        $post = Post::findOrFail($id);
 
-        // Récupérer les commentaires avec les informations des utilisateurs
-        $comments = $commentable->comments()->with('user')->get();
+        // Récupérer les commentaires avec les informations des utilisateurs et leur profil
+        $comments = $post->comments()
+            ->with(['user.profile'])
+            ->get()
+            ->map(function ($comment) {
+                return [
+                    'id' => $comment->id,
+                    'post_id' => $comment->post_id,
+                    'user_id' => $comment->user_id,
+                    'content' => $comment->content,
+                    'created_at' => $comment->created_at,
+                    'updated_at' => $comment->updated_at,
+                    'user' => [
+                        'id' => $comment->user->id,
+                        'name' => $comment->user->name,
+                        'email' => $comment->user->email,
+                        'avatar' => $comment->user->profile->avatar ?? null,
+                        'email_verified_at' => $comment->user->email_verified_at,
+                        'created_at' => $comment->user->created_at,
+                        'updated_at' => $comment->user->updated_at
+                    ]
+                ];
+            });
 
         return response()->json($comments, 200);
     }
 
-    public function destroy($type, $id, $commentId)
+    public function destroy($id, $commentId)
     {
         $comment = Comment::findOrFail($commentId);
 

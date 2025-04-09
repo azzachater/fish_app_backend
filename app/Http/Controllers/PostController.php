@@ -3,28 +3,43 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\Models\Like;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Like;
-
 
 class PostController extends Controller implements HasMiddleware
 {
     public static function middleware()
     {
-        return[
-            new Middleware('auth:sanctum',except:['index','show'])
+        return [
+            new Middleware('auth:sanctum', except: ['index', 'show'])
         ];
     }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        return Post::all();
+        return response()->json(Post::with('user.profile', 'likes')->get()->map(function ($post) {
+            return [
+                'id' => (string) $post->id, // Convertir en string
+                'user' => [
+                    'id' => (string) $post->user->id, // Inclure l'objet User
+                    'name' => $post->user->name, 
+                    'avatar' => $post->user->profile->avatar ?? null, // Inclure l'avatar
+                ],
+                'post_text' => $post->post_text ?? '',
+                'post_image' => $post->post_image ?? '',
+                'created_at' => $post->created_at,
+                'updated_at' => $post->updated_at,
+                'like_count' => $post->likes->count(), // Ajouter le nombre de likes
+                'is_liked' => $post->likes->contains('user_id', Auth::id()), // Vérifier si l'utilisateur a liké
+            ];
+        }));
     }
 
     /**
@@ -33,13 +48,30 @@ class PostController extends Controller implements HasMiddleware
     public function store(Request $request)
     {
         $fields = $request->validate([
-            'title' => 'required|max:255',
-            'body' => 'required'
+            'post_text' => 'nullable|string',
+            'post_image' => 'nullable|string',
         ]);
 
-        $post =$request->user()->posts()->create($fields);
+        if (empty($fields['post_text']) && empty($fields['post_image'])) {
+            return response()->json(['error' => 'Un post doit contenir du texte ou une image.'], 400);
+        }
 
-        return $post;
+        $post = $request->user()->posts()->create($fields);
+
+        return response()->json([
+            'id' => (string) $post->id,
+            'user' => [
+                'id' => (string) $post->user->id,
+                'name' => $post->user->name,
+                'avatar' => $post->user->profile->avatar ?? null, // Inclure l'avatar
+            ],
+            'post_text' => $post->post_text ?? '', // Remplacer null par une chaîne vide
+            'post_image' => $post->post_image ?? '', // Remplacer null par une chaîne vide
+            'created_at' => $post->created_at,
+            'updated_at' => $post->updated_at,
+            'like_count' => $post->likes->count(),
+            'is_liked' => $post->likes->contains('user_id', Auth::id()),
+        ]);
     }
 
     /**
@@ -47,7 +79,20 @@ class PostController extends Controller implements HasMiddleware
      */
     public function show(Post $post)
     {
-        return  $post;
+        return response()->json([
+            'id' => (string) $post->id,
+            'user' => [
+                'id' => (string) $post->user->id,
+                'name' => $post->user->name,
+                'avatar' => $post->user->profile->avatar ?? null, // Inclure l'avatar
+            ],
+            'post_text' => $post->post_text ?? '',
+            'post_image' => $post->post_image ?? '',
+            'created_at' => $post->created_at,
+            'updated_at' => $post->updated_at,
+            'like_count' => $post->likes->count(),
+            'is_liked' => $post->likes->contains('user_id', Auth::id()),
+        ]);
     }
 
     /**
@@ -56,13 +101,32 @@ class PostController extends Controller implements HasMiddleware
     public function update(Request $request, Post $post)
     {
         Gate::authorize('modify', $post);
+
         $fields = $request->validate([
-            'title' => 'required|max:255',
-            'body' => 'required'
+            'post_text' => 'nullable|string',
+            'post_image' => 'nullable|string',
         ]);
+
+        if (empty($fields['post_text']) && empty($fields['post_image'])) {
+            return response()->json(['error' => 'Un post doit contenir du texte ou une image.'], 400);
+        }
+
         $post->update($fields);
 
-        return $post;
+        return response()->json([
+            'id' => (string) $post->id,
+            'user' => [
+                'id' => (string) $post->user->id,
+                'name' => $post->user->name,
+                'avatar' => $post->user->profile->avatar ?? null, // Inclure l'avatar
+            ],
+            'post_text' => $post->post_text ?? '',
+            'post_image' => $post->post_image ?? '',
+            'created_at' => $post->created_at,
+            'updated_at' => $post->updated_at,
+            'like_count' => $post->likes->count(),
+            'is_liked' => $post->likes->contains('user_id', Auth::id()),
+        ]);
     }
 
     /**
@@ -73,21 +137,21 @@ class PostController extends Controller implements HasMiddleware
         Gate::authorize('modify', $post);
         $post->delete();
 
-        return ['message' => 'the post was deleted'];
+        return response()->json(['message' => 'Le post a été supprimé.']);
     }
+
+    /**
+     * Like or Unlike a post.
+     */
     public function like(Post $post)
     {
-        $user = Auth::user(); // Récupérer l'utilisateur authentifié
-
-        // Vérifier si l'utilisateur a déjà liké ce post
+        $user = Auth::user();
         $like = Like::where('user_id', $user->id)->where('post_id', $post->id)->first();
 
         if ($like) {
-            // Si le like existe déjà, le supprimer pour unliker
             $like->delete();
             return response()->json(['message' => 'Post unliked'], 200);
         } else {
-            // Sinon, ajouter un like
             Like::create([
                 'user_id' => $user->id,
                 'post_id' => $post->id,
@@ -96,13 +160,12 @@ class PostController extends Controller implements HasMiddleware
         }
     }
 
-    // Méthode pour récupérer la liste des likers et le nombre total de likes d'un post
+    /**
+     * Get likers and like count of a post.
+     */
     public function likers(Post $post)
     {
-        // Récupérer les utilisateurs qui ont liké le post
         $likers = $post->likes()->with('user')->get();
-
-        // Récupérer le nombre total de likes
         $likeCount = $post->likes()->count();
 
         return response()->json([
@@ -110,7 +173,4 @@ class PostController extends Controller implements HasMiddleware
             'like_count' => $likeCount,
         ], 200);
     }
-
-    // Les autres méthodes restent inchangées...
 }
-
