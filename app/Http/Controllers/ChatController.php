@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Conversation;
@@ -12,59 +11,121 @@ class ChatController extends Controller
 {
     // Envoyer un message à un user spécifique
     public function send(Request $request, $receiver_id)
-{
-    $request->validate([
-        'content' => 'required|string',
-    ]);
+    {
+        $request->validate([
+            'content' => 'required|string',
+        ]);
 
-    $sender_id = Auth::id();
+        $sender_id = Auth::id();
 
-    $conversation = Conversation::firstOrCreate(
-        [
-            'user_one_id' => min($sender_id, $receiver_id),
-            'user_two_id' => max($sender_id, $receiver_id),
-        ]
-    );
+        $conversation = Conversation::firstOrCreate(
+            [
+                'user_one_id' => min($sender_id, $receiver_id),
+                'user_two_id' => max($sender_id, $receiver_id),
+            ]
+        );
 
-    $message = Message::create([
-        'conversation_id' => $conversation->id,
-        'sender_id' => $sender_id,
-        'content' => $request->content,
-    ]);
+        $message = Message::create([
+            'conversation_id' => $conversation->id,
+            'sender_id' => $sender_id,
+            'content' => $request->content,
+            'is_read' => false, // Nouveau message non lu par défaut
+        ]);
 
-    return response()->json([
-        'message' => 'Message sent successfully',
-        'data' => $message
-    ], 201);
-}
+        // Mettre à jour la date de la conversation
+        $conversation->touch();
 
-    // Récupérer toutes les conversations du user connecté
+        return response()->json([
+            'message' => 'Message sent successfully',
+            'data' => $message
+        ], 201);
+    }
+
+    // Récupérer toutes les conversations du user connecté avec le nombre de messages non lus
     public function getMyConversations()
-{
-    $user = Auth::user();
-    $conversations = Conversation::where('user_one_id', $user->id)
-        ->orWhere('user_two_id', $user->id)
-        ->with([
-            'messages.sender.profile',
-            'userOne.profile',
-            'userTwo.profile'
-        ])
-        ->orderByDesc('updated_at')
-        ->get();
+    {
+        $user = Auth::user();
+        
+        $conversations = Conversation::where('user_one_id', $user->id)
+            ->orWhere('user_two_id', $user->id)
+            ->with([
+                'messages' => function($query) {
+                    $query->orderBy('created_at', 'desc');
+                },
+                'messages.sender.profile',
+                'userOne.profile',
+                'userTwo.profile'
+            ])
+            ->orderByDesc('updated_at')
+            ->get()
+            ->map(function($conversation) use ($user) {
+                // Compter les messages non lus
+                $unreadCount = $conversation->messages()
+                    ->where('sender_id', '!=', $user->id)
+                    ->where('is_read', false)
+                    ->count();
+                
+                // Récupérer le dernier message
+                $lastMessage = $conversation->messages->first();
+                
+                return [
+                    'id' => $conversation->id,
+                    'user_one' => $conversation->userOne,
+                    'user_two' => $conversation->userTwo,
+                    'last_message' => $lastMessage,
+                    'unread_count' => $unreadCount,
+                    'messages' => $conversation->messages
+                ];
+            });
 
-    return response()->json($conversations);
-}
+        return response()->json($conversations);
+    }
 
-    // Récupérer les messages d'une conversation
+    // Récupérer les messages d'une conversation et marquer comme lus
     public function getMessages($conversation_id)
     {
+        $user = Auth::user();
         $conversation = Conversation::with([
             'messages.sender.profile',
             'userOne.profile',
             'userTwo.profile'
         ])->findOrFail($conversation_id);
         
-        return response()->json($conversation);
+        // Marquer les messages comme lus
+        Message::where('conversation_id', $conversation_id)
+            ->where('sender_id', '!=', $user->id)
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+        
+        return response()->json([
+            'id' => $conversation->id,
+            'user_one' => $conversation->userOne,
+            'user_two' => $conversation->userTwo,
+            'messages' => $conversation->messages,
+            'unread_count' => 0 // Maintenant que c'est ouvert, plus de messages non lus
+        ]);
     }
-}
 
+    // Nouvelle méthode pour marquer les messages comme lus
+    public function markAsRead($conversation_id)
+    {
+        $user = Auth::user();
+        
+        Message::where('conversation_id', $conversation_id)
+            ->where('sender_id', '!=', $user->id)
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+        
+        return response()->json(['message' => 'Messages marked as read']);
+    }
+    public function getUnreadCount($conversation_id)
+{
+    $user = Auth::user();
+    $count = Message::where('conversation_id', $conversation_id)
+        ->where('sender_id', '!=', $user->id)
+        ->where('is_read', false)
+        ->count();
+        
+    return response()->json(['unread_count' => $count]);
+}
+}

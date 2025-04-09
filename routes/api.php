@@ -21,6 +21,8 @@ Route::middleware('auth:sanctum')->group(function () {
   Route::post('/message/send/{receiver_id}', [ChatController::class, 'send']);
   Route::get('/conversations', [ChatController::class, 'getMyConversations']);
   Route::get('/conversations/{id}', [ChatController::class, 'getMessages']);
+  Route::post('conversations/{conversation_id}/mark-as-read', [ChatController::class, 'markAsRead']);
+  Route::get('/conversations/{id}/unread-count', [ChatController::class, 'getUnreadCount']);
 });
 Route::get('/user', function (Request $request) { 
     return $request->user(); 
