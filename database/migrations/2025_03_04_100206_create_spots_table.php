@@ -18,7 +18,8 @@ return new class extends Migration
             $table->decimal('longitude', 11, 8);
             $table->text('description');
             $table->string('fish_species')->nullable();
-            $table->string('fish_technique')->nullable();
+            $table->string('recommendedTechniques')->nullable();
+            $table->string('depth')->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });

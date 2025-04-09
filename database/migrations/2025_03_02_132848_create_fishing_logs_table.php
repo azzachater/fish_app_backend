@@ -19,6 +19,8 @@ return new class extends Migration
             $table->text('species_caught');
             $table->text('fishing_conditions');
             $table->text('notes')->nullable();
+            $table->string('title')->default('Sans titre');
+            $table->string('time')->default('00:00');
             $table->timestamps();
         });
     }
