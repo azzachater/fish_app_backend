@@ -14,9 +14,16 @@ class Product extends Model
         'name',
         'description',
         'price',
+        'unit',
         'stock',
-        //'photo',
-        'user_id',
+        'category',
+        'image',
+        'user_id'
+    ];
+
+    protected $casts = [
+        'price' => 'decimal:2',
+        'stock' => 'integer',
     ];
 
     public function user()
