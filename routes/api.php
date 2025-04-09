@@ -18,7 +18,6 @@ use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ChatController;
 
-<<<<<<< HEAD
 Route::middleware('auth:sanctum')->group(function () {
   Route::post('/message/send/{receiver_id}', [ChatController::class, 'send']);
   Route::get('/conversations', [ChatController::class, 'getMyConversations']);
@@ -39,11 +38,6 @@ Route::get('user/{id}', [AuthController::class, 'CheckUser']);
 
 Route::get('/me', [AuthController::class, 'me'])->middleware
 ('auth:sanctum');
-=======
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth: sanctum');
->>>>>>> main
 
 Route::apiResource('posts', PostController::class)->middleware('auth:sanctum');
 
