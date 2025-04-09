@@ -16,7 +16,8 @@ class Spot extends Model
         'longitude',
         'description',
         'fish_species',
-        'fish_technique',
+        'recommendedTechniques',
+        'depth',
         'user_id',
     ];
 
@@ -30,6 +31,3 @@ class Spot extends Model
         return $this->morphMany(Comment::class, 'commentable');
     }
 }
-
-
-

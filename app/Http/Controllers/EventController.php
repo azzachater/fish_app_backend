@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -12,8 +13,8 @@ class EventController extends Controller implements HasMiddleware
 {
     public static function middleware()
     {
-        return[
-            new Middleware('auth:sanctum',except:['index','show'])
+        return [
+            new Middleware('auth:sanctum', except: ['index', 'show'])
         ];
     }
     /**
@@ -21,42 +22,51 @@ class EventController extends Controller implements HasMiddleware
      */
     public function index()
     {
-        return EventResource::collection(Event::with('user')->paginate());
+        return EventResource::collection(
+            Event::with(['user', 'participants'])
+                ->orderBy('date', 'desc')
+                ->get()
+        );
     }
 
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-{
-    // Validation des données
-    $validated = $request->validate([
-        'name' => 'required|max:255',
-        'description' => 'nullable|string',
-        'start_time' => 'required|date',
-        'end_time' => 'required|date|after:start_time', // Utiliser la syntaxe correcte
-    ]);
+    {
+        $validated = $request->validate([
+            'title' => 'required|max:255',
+            'location' => 'required',
+            'description' => 'nullable|string',
+            'date' => 'required|date_format:Y-m-d', // Format correspondan
+        ]);
 
-    // Création de l'événement avec les données validées
-    $event = Event::create([
-        'name' => $validated['name'],
-        'description' => $validated['description'],
-        'start_time' => $validated['start_time'],
-        'end_time' => $validated['end_time'],
-        'user_id' => $request->user()->id,
-    ]);
+        $event = Event::create([
+            'title' => $validated['title'],
+            'location' => $validated['location'],
+            'description' => $validated['description'],
+            'date' => $validated['date'], // Laravel convertit automatiquement en DateTime
+            'user_id' => $request->user()->id,
+        ]);
 
-    // Retourner la réponse avec le nouvel événement
-    return new EventResource($event);
-}
+        return response()->json([
+            'id' => $event->id,
+            'title' => $event->title,
+            'location' => $event->location,
+            'description' => $event->description,
+            'date' => $event->date, // Laravel gère automatiquement la conversion en JSON
+            'user_id' => $event->user_id,
+            'participants' => []
+        ], 201);
+    }
 
 
     /**
      * Display the specified resource.
      */
     public function show(Event $event)
-    { 
-        $event->load('user','participants');
+    {
+        $event->load('user', 'participants');
         return  new EventResource($event::with('user')->get());
     }
 
@@ -64,29 +74,34 @@ class EventController extends Controller implements HasMiddleware
      * Update the specified resource in storage.
      */
     public function update(Request $request, Event $event)
-{
-    // Autoriser la modification uniquement pour le propriétaire de l'événement
-    Gate::authorize('modify', $event);
+    {
+        Gate::authorize('modify', $event);
 
-    // Validation des données
-    $validated = $request->validate([
-        'name' => 'sometimes|max:255',
-        'description' => 'nullable|string',
-        'start_time' => 'required|date',
-        'end_time' => 'required|date|after:start_time', // Utiliser la syntaxe correcte
-    ]);
+        $validated = $request->validate([
+            'title' => 'required|max:255',
+            'location' => 'required',
+            'description' => 'nullable|string',
+            'date' => 'required|date',
+            'participants' => 'required|array', // Validation des participants
+        ]);
 
-    // Mise à jour de l'événement avec les données validées
-    $event->update([
-        'name' => $validated['name'] ?? $event->name,
-        'description' => $validated['description'] ?? $event->description,
-        'start_time' => $validated['start_time'] ?? $event->start_time,
-        'end_time' => $validated['end_time'] ?? $event->end_time,
-    ]);
+        $event->update([
+            'title' => $validated['title'],
+            'location' => $validated['location'],
+            'description' => $validated['description'],
+            'date' => $validated['date'],
+            'participants' => $validated['participants'], // Mise à jour des participants
+        ]);
 
-    // Retourner la réponse avec l'événement mis à jour
-    return new EventResource($event);
-}
+        return response()->json([
+            'id' => $event->id,
+            'title' => $event->title,
+            'location' => $event->location,
+            'description' => $event->description,
+            'date' => $event->date->format('Y-m-d'),
+            'participants' => $event->participants ?? []
+        ]);
+    }
 
 
     /**
