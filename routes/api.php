@@ -73,18 +73,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/posts/{postId}/liked-users', [LikeController::class, 'likedUsers']);
 });
 
-<<<<<<< HEAD
-Route::apiResource('fishing_logs',FishingLogController::class);
 Route::apiResource('tips',TipController::class)->middleware
 ('auth:sanctum');
 Route::put('/tips/{id}', [TipController::class, 'update'])->middleware
 ('auth:sanctum');
-Route::apiResource('spots',SpotController::class);
-=======
 Route::apiResource('logs', FishingLogController::class);
-Route::apiResource('tips', TipController::class)->middleware('auth:sanctum');
 Route::apiResource('spots', SpotController::class);
->>>>>>> main
 
 Route::get('/posts/{postId}/comments', [CommentController::class, 'index']);
 Route::post('/posts/{postId}/comments', [CommentController::class, 'store'])->middleware
