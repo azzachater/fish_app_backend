@@ -41,7 +41,9 @@ class FishingLogController extends Controller implements HasMiddleware
     public function store(Request $request)
     {
         $fields = $request->validate([
+            'title' => 'required|string|max:255',
             'date' => 'required|date',
+            'time' => 'required|string|max:5',
             'location' => 'required|string',
             'species_caught' => 'required|string',
             'fishing_conditions' => 'required|string',
@@ -61,7 +63,9 @@ class FishingLogController extends Controller implements HasMiddleware
     public function update(Request $request, $id)
     {
         $request->validate([
+            'title' => 'required|string|max:255',
             'date' => 'required|date',
+            'time' => 'required|string|max:5',
             'location' => 'required|string',
             'species_caught' => 'required|string',
             'fishing_conditions' => 'required|string',

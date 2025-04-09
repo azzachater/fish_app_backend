@@ -10,20 +10,33 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Event extends Model
 {
-   
+
     use HasFactory;
     protected $fillable = [
-        'name', 
-        'description', 
-        'start_time', 
-        'end_time', 
+        'title',
+        'location',
+        'description',
+        'date',
         'user_id'
     ];
+    // Dans app/Models/Event.php
+    protected $casts = [
+        'date' => 'datetime:Y-m-d'
+    ];
 
-    public function user(): BelongsTo{
+    public function user(): BelongsTo
+    {
         return $this->belongsTo(User::class);
     }
-    public function participants(): HasMany{
+    public function participants(): HasMany
+    {
         return $this->hasMany(Participant::class);
+    }
+    // Helper pour récupérer les avatars
+    public function getParticipantAvatars()
+    {
+        return $this->participants->map(function ($participant) {
+            return $participant->user->avatar_url; // Adaptez à votre structure User
+        })->toArray();
     }
 }
