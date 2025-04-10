@@ -17,6 +17,17 @@ use App\Http\Controllers\ShareController;
 use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\GroupChatController;
+
+
+Route::middleware('auth:sanctum')->prefix('group')->group(function () {
+  Route::post('/create', [GroupChatController::class, 'createGroup']);
+  Route::post('/{groupId}/add-user', [GroupChatController::class, 'addUserToGroup']);
+  Route::get('/my-groups', [GroupChatController::class, 'getMyGroups']);
+  Route::get('/{groupId}/messages', [GroupChatController::class, 'getGroupMessages']);
+  Route::post('/{groupId}/send', [GroupChatController::class, 'sendGroupMessage']);
+});
+
 
 Route::middleware('auth:sanctum')->group(function () {
   Route::post('/message/send/{receiver_id}', [ChatController::class, 'send']);
@@ -25,13 +36,13 @@ Route::middleware('auth:sanctum')->group(function () {
   Route::post('conversations/{conversation_id}/mark-as-read', [ChatController::class, 'markAsRead']);
   Route::get('/conversations/{id}/unread-count', [ChatController::class, 'getUnreadCount']);
 });
-Route::get('/user', function (Request $request) { 
-    return $request->user(); 
-      })->middleware('auth: sanctum');
+Route::get('/user', function (Request $request) {
+  return $request->user();
+})->middleware('auth: sanctum');
 Route::middleware('auth:sanctum')->group(function () {
   Route::get('/user/{userId}/profile', [ProfileController::class, 'show']);
   Route::post('/profile', [ProfileController::class, 'update']);
-    });
+});
 Route::get('users', [AuthController::class, 'getAllUsers']);
 
 Route::get('user/{id}', [AuthController::class, 'CheckUser']);
@@ -47,14 +58,14 @@ Route::get('posts/other', [PostController::class, 'getOtherUsersPosts'])->middle
 
 Route::apiResource('products', ProductController::class)->middleware('auth:sanctum');
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('products/{productId}/add-to-cart', [ProductController::class, 'addToCartFromProduct']);
+  Route::post('products/{productId}/add-to-cart', [ProductController::class, 'addToCartFromProduct']);
 });
 // Routes protégées pour la gestion du panier
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('cart/add', [CartController::class, 'addToCart']); // Ajouter un produit au panier
-    Route::get('cart', [CartController::class, 'index']); // Voir les produits dans le panier
-    Route::put('cart/update/{cart}', [CartController::class, 'update']); // Modifier quantité
-    Route::delete('cart/remove/{cart}', [CartController::class, 'removeFromCart']); // Supprimer du panier
+  Route::post('cart/add', [CartController::class, 'addToCart']); // Ajouter un produit au panier
+  Route::get('cart', [CartController::class, 'index']); // Voir les produits dans le panier
+  Route::put('cart/update/{cart}', [CartController::class, 'update']); // Modifier quantité
+  Route::delete('cart/remove/{cart}', [CartController::class, 'removeFromCart']); // Supprimer du panier
 });
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -66,14 +77,14 @@ Route::apiResource('events', EventController::class)->middleware('auth:sanctum')
 Route::apiResource('events.participants', ParticipantController::class)->scoped()->except('update')->middleware('auth:sanctum');
 
 Route::middleware('auth:sanctum')->group(function () {
-    // Liker / Unliker un post
-    Route::post('/posts/{postId}/like', [LikeController::class, 'likePost']);
+  // Liker / Unliker un post
+  Route::post('/posts/{postId}/like', [LikeController::class, 'likePost']);
 
-    // Voir la liste des utilisateurs ayant liké un post (seulement pour le propriétaire)
-    Route::get('/posts/{postId}/liked-users', [LikeController::class, 'likedUsers']);
+  // Voir la liste des utilisateurs ayant liké un post (seulement pour le propriétaire)
+  Route::get('/posts/{postId}/liked-users', [LikeController::class, 'likedUsers']);
 });
 
-Route::apiResource('tips',TipController::class)->middleware
+Route::apiResource('tips', TipController::class)->middleware
 ('auth:sanctum');
 Route::put('/tips/{id}', [TipController::class, 'update'])->middleware
 ('auth:sanctum');
