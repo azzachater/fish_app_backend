@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Profile;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -33,13 +34,14 @@ public function CheckUser($id)
     return response()->json($user);
 }
 
-    public function register(Request $request)
+public function register(Request $request)
 {
     $request->validate([
         'name' => 'required|string|max:255',
         'email' => 'required|string|email|max:255|unique:users,email',
         'password' => 'required|string|min:8|confirmed',
     ]);
+
 
     $user = User::create([
         'name' => $request->name,
@@ -52,6 +54,10 @@ public function CheckUser($id)
     // Créer un token pour le user
     $token = $user->createToken('auth_token')->plainTextToken;
 
+    event(new Registered($user));
+
+    //return redirect()->route('profile')   : pour aller toul lel page ele nheb aliha (profile)
+
     return response()->json(
         [
             'message' => 'User registered successfully',
@@ -62,7 +68,6 @@ public function CheckUser($id)
         201
     );
 }
-
 
     public function login(Request $request)
     {

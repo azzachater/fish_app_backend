@@ -19,7 +19,7 @@ return new class extends Migration
             $table->text('description');
             $table->string('fish_species')->nullable();
             $table->string('recommendedTechniques')->nullable();
-            $table->string('depth')->nullable();
+            $table->decimal('depth', 8, 2)->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });

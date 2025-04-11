@@ -17,10 +17,22 @@ class SpotController extends Controller implements HasMiddleware
         ];
     }
     public function index()
-    {
-        $spots = Spot::all();
-        return response()->json($spots);
-    }
+{
+    return response()->json(
+        Spot::all()->map(function ($spot) {
+            return [
+                'id' => (int)$spot->id,
+                'name' => $spot->name,
+                'latitude' => (float)$spot->latitude,
+                'longitude' => (float)$spot->longitude,
+                'description' => $spot->description,
+                'fish_species' => $spot->fish_species,
+                'recommended_techniques' => $spot->recommendedTechniques,
+                'depth' => $spot->depth !== null ? (float)$spot->depth : null,
+            ];
+        })
+    );
+}
 
     public function store(Request $request)
     {
@@ -30,10 +42,10 @@ class SpotController extends Controller implements HasMiddleware
             'longitude' => 'required|numeric',
             'description' => 'required|string|max:255',
             'fish_species' => 'required|string|max:255',
-            'recommendedTechniques' => 'required|string|max:255',
-            'depth' => 'required|string|max:255',
-
+            'recommendedTechniques' => 'nullable|string|max:255', // ✅ string obligatoire
+            'depth' => 'required|numeric', // ✅ numérique obligatoire
         ]);
+
         $spot = $request->user()->spots()->create($fields);
         return response()->json($spot, 201);
     }
@@ -56,10 +68,10 @@ class SpotController extends Controller implements HasMiddleware
             'longitude' => 'required|numeric',
             'description' => 'required|string|max:255',
             'fish_species' => 'required|string|max:255',
-            'recommendedTechniques' => 'required|string|max:255',
-            'depth' => 'required|string|max:255',
-
+            'recommendedTechniques' => 'required|string|max:255', // ✅ string obligatoire
+            'depth' => 'required|numeric', // ✅ numérique obligatoire
         ]);
+
         $spot = Spot::where('user_id', Auth::id())->findOrFail($id);
         $spot->update($request->all());
         return response()->json($spot);
