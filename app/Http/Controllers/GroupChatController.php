@@ -85,19 +85,56 @@ public function createGroup(Request $request)
             'content' => 'required|string',
         ]);
 
-        $group = GroupConversation::findOrFail($groupId);
+        $group = GroupConversation::with('members')->findOrFail($groupId);
 
-        // Vérifier que l’utilisateur fait partie du groupe
-        if (!$group->members->contains(auth()->id())) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
+        // Créer le message
         $message = GroupMessage::create([
             'group_conversation_id' => $group->id,
             'sender_id' => auth()->id(),
             'content' => $request->content,
         ]);
-
+        
+        // Marquer comme non lu pour les autres membres
+        foreach ($group->members as $member) {
+            if ($member->id !== auth()->id()) {
+                \DB::table('group_message_user')->insert([
+                    'group_message_id' => $message->id,
+                    'user_id' => $member->id,
+                    'is_read' => false,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
+        }
+        
         return response()->json($message->load('sender.profile'), 201);
     }
+    public function markGroupMessagesAsRead($groupId)
+{
+    $userId = auth()->id();
+
+    // Marquer tous les messages du groupe comme lus pour l'utilisateur
+    \DB::table('group_message_user')
+        ->join('group_messages', 'group_message_user.group_message_id', '=', 'group_messages.id')
+        ->where('group_messages.group_conversation_id', $groupId)
+        ->where('group_message_user.user_id', $userId)
+        ->where('group_message_user.is_read', false)
+        ->update(['group_message_user.is_read' => true]);
+
+    return response()->json(['message' => 'Messages marked as read']);
+}
+public function getGroupUnreadCount($groupId)
+{
+    $userId = auth()->id();
+
+    $count = \DB::table('group_message_user')
+        ->join('group_messages', 'group_message_user.group_message_id', '=', 'group_messages.id')
+        ->where('group_messages.group_conversation_id', $groupId)
+        ->where('group_message_user.user_id', $userId)
+        ->where('group_message_user.is_read', false)
+        ->count();
+
+    return response()->json(['unread_count' => $count]);
+}
+        
 }

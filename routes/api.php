@@ -26,6 +26,8 @@ Route::middleware('auth:sanctum')->prefix('group')->group(function () {
   Route::get('/my-groups', [GroupChatController::class, 'getMyGroups']);
   Route::get('/{groupId}/messages', [GroupChatController::class, 'getGroupMessages']);
   Route::post('/{groupId}/send', [GroupChatController::class, 'sendGroupMessage']);
+  Route::post('/{groupId}/mark-as-read', [GroupChatController::class, 'markGroupMessagesAsRead']);
+  Route::get('/{groupId}/unread-count', [GroupChatController::class, 'getGroupUnreadCount']);
 });
 
 
