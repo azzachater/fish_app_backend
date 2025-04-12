@@ -6,6 +6,7 @@ use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Events\MessageEvent;
 
 class ChatController extends Controller
 {
@@ -34,6 +35,9 @@ class ChatController extends Controller
 
         // Mettre à jour la date de la conversation
         $conversation->touch();
+
+        broadcast(new MessageEvent($message))->toOthers();
+        \Log::info('Event triggered', ['message_id' => $message->id]);
 
         return response()->json([
             'message' => 'Message sent successfully',
