@@ -19,6 +19,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\GroupChatController;
 
+Route::post('/broadcasting/auth', function (Request $request) {
+  return Broadcast::auth($request);
+})->middleware('auth:api');
 
 Route::middleware('auth:sanctum')->prefix('group')->group(function () {
   Route::post('/create', [GroupChatController::class, 'createGroup']);

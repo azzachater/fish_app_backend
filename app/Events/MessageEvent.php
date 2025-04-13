@@ -23,7 +23,12 @@ class MessageEvent implements ShouldBroadcastNow
 
     public function broadcastOn(): Channel
     {
-        return new PrivateChannel('chat.' . $this->message->conversation_id);
+        \Log::info("Broadcasting message to channel: chat.chat.{$this->message->conversation_id}", [
+        'message_id' => $this->message->id,
+        'content' => $this->message->content
+    ]);
+
+        return new PrivateChannel('chat.chat.' . $this->message->conversation_id);
     }
 
     public function broadcastAs(): string

@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\GroupMessageEvent;
 use App\Models\User;
 use App\Models\GroupConversation;
 use App\Models\GroupMessage;
 use Illuminate\Http\Request;
+use App\Events\GroupMessageEventMessageEvent;
 
 class GroupChatController extends Controller
 {
@@ -106,6 +108,8 @@ public function createGroup(Request $request)
                 ]);
             }
         }
+        broadcast(new GroupMessageEvent($message))->toOthers();
+        \Log::info('Event triggered', ['message_id' => $message->id]);
         
         return response()->json($message->load('sender.profile'), 201);
     }
