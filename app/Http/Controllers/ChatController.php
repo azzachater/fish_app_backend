@@ -10,7 +10,7 @@ use App\Events\MessageEvent;
 
 class ChatController extends Controller
 {
-    // Envoyer un message à un user spécifique
+   
     public function send(Request $request, $receiver_id)
     {
         $request->validate([
@@ -30,10 +30,9 @@ class ChatController extends Controller
             'conversation_id' => $conversation->id,
             'sender_id' => $sender_id,
             'content' => $request->content,
-            'is_read' => false, // Nouveau message non lu par défaut
+            'is_read' => false, 
         ]);
 
-        // Mettre à jour la date de la conversation
         $conversation->touch();
 
         broadcast(new MessageEvent($message))->toOthers();
@@ -45,7 +44,6 @@ class ChatController extends Controller
         ], 201);
     }
 
-    // Récupérer toutes les conversations du user connecté avec le nombre de messages non lus
     public function getMyConversations()
     {
         $user = Auth::user();
@@ -85,7 +83,6 @@ class ChatController extends Controller
         return response()->json($conversations);
     }
 
-    // Récupérer les messages d'une conversation et marquer comme lus
     public function getMessages($conversation_id)
     {
         $user = Auth::user();
@@ -110,7 +107,6 @@ class ChatController extends Controller
         ]);
     }
 
-    // Nouvelle méthode pour marquer les messages comme lus
     public function markAsRead($conversation_id)
     {
         $user = Auth::user();
