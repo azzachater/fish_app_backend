@@ -8,7 +8,7 @@ Broadcast::channel('chat.chat.{conversation_id}', function ($user, $conversation
     return $conversation &&
         ($user->id === $conversation->user_one_id || $user->id === $conversation->user_two_id);
 });
-Broadcast::channel('group.{groupId}', function ($user, $groupId) {
+Broadcast::channel('group.group.{groupId}', function ($user, $groupId) {
     return $user->groupConversations()->where('group_conversations.id', $groupId)->exists();
 });
 

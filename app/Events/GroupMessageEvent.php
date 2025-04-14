@@ -30,7 +30,7 @@ class GroupMessageEvent implements ShouldBroadcastNow
             'message_id' => $this->message->id,
             'content' => $this->message->content
         ]);
-        return new PrivateChannel('group.' . $this->message->group_conversation_id);
+        return new PrivateChannel('group.group.' . $this->message->group_conversation_id);
     }
     public function broadcastAs(): string
     {
