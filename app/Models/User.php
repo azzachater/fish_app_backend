@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Notifications\CustomVerifyEmailNotification;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -23,6 +24,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'verification_code',
+        'verification_code_expires_at'
     ];
 
     /**
@@ -34,6 +37,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'verification_code'
     ];
 
     /**
@@ -46,6 +50,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'verification_code_expires_at' => 'datetime'
         ];
     }
 
@@ -94,6 +99,11 @@ public function conversations()
 {
     return Conversation::where('user_one_id', $this->id)
             ->orWhere('user_two_id', $this->id);
+}
+public function sendEmailVerificationNotification()
+{
+    // Désactivez l'envoi automatique pour utiliser notre version personnalisée
+    // Ne faites rien ici, tout est géré dans le contrôleur
 }
 
 }

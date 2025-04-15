@@ -33,12 +33,18 @@ use App\Http\Controllers\ChatController;
 
 // Auth
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/verify-code', [AuthController::class, 'verifyCode']);
+Route::post('/resend-code', [AuthController::class, 'resendCode']);
+Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('users', [AuthController::class, 'getAllUsers']);
 Route::get('user/{id}', [AuthController::class, 'CheckUser']);
 Route::get('/showProfile/{id}', [AuthController::class, 'showProfile']);
+Route::get('/sanctum/csrf-cookie', function (Request $request) {
+    return response()->json(['csrf_token' => csrf_token()]);
+});
 
-Route::middleware('auth:sanctum','verified')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
 
     // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
