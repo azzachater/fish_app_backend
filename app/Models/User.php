@@ -99,4 +99,9 @@ public function groupConversations()
 {
     return $this->belongsToMany(GroupConversation::class, 'group_conversation_user', 'user_id', 'group_conversation_id');
 }
+public function notifications()
+{
+    return $this->hasMany(Notification::class, 'receiver_id');
+}
+
 }

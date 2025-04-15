@@ -6,8 +6,9 @@ use App\Events\GroupMessageEvent;
 use App\Models\User;
 use App\Models\GroupConversation;
 use App\Models\GroupMessage;
+use App\Models\Notification;
 use Illuminate\Http\Request;
-use App\Events\GroupMessageEventMessageEvent;
+use App\Events\NotificationEvent;
 
 class GroupChatController extends Controller
 {
@@ -78,35 +79,50 @@ public function createGroup(Request $request)
     }
 
     public function sendGroupMessage(Request $request, $groupId)
-    {
-        $request->validate([
-            'content' => 'required|string',
-        ]);
+{
+    $request->validate([
+        'content' => 'required|string',
+    ]);
 
-        $group = GroupConversation::with('members')->findOrFail($groupId);
+    $group = GroupConversation::with('members')->findOrFail($groupId);
 
-        $message = GroupMessage::create([
-            'group_conversation_id' => $group->id,
-            'sender_id' => auth()->id(),
-            'content' => $request->content,
-        ]);
-        
-        foreach ($group->members as $member) {
-            if ($member->id !== auth()->id()) {
-                \DB::table('group_message_user')->insert([
-                    'group_message_id' => $message->id,
-                    'user_id' => $member->id,
-                    'is_read' => false,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-            }
+    $message = GroupMessage::create([
+        'group_conversation_id' => $group->id,
+        'sender_id' => auth()->id(),
+        'content' => $request->content,
+    ]);
+
+    foreach ($group->members as $member) {
+        if ($member->id !== auth()->id()) {
+            // Message lu/non-lu
+            \DB::table('group_message_user')->insert([
+                'group_message_id' => $message->id,
+                'user_id' => $member->id,
+                'is_read' => false,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // ✅ Créer notification
+            $notif = Notification::create([
+                'sender_id' => auth()->id(),
+                'receiver_id' => $member->id,
+                'message' => auth()->user()->name . ' a envoyé un message dans le groupe "' . $group->name . '"',
+                'type' => 'group',
+                'group_conversation_id' => $group->id,
+            ]);
+            broadcast(new NotificationEvent($notif))->toOthers();
+            \Log::info('Message pour le membre', ['message_id' => $message->id, 'user_id' => $member->id]);
+
         }
-        broadcast(new GroupMessageEvent($message))->toOthers();
-        \Log::info('Event triggered', ['message_id' => $message->id]);
-        
-        return response()->json($message->load('sender.profile'), 201);
     }
+   
+
+    broadcast(new GroupMessageEvent($message))->toOthers();
+    \Log::info('Event triggered', ['message_id' => $message->id]);
+
+    return response()->json($message->load('sender.profile'), 201);
+}
     public function markGroupMessagesAsRead($groupId)
 {
     $userId = auth()->id();

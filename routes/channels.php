@@ -11,5 +11,10 @@ Broadcast::channel('chat.chat.{conversation_id}', function ($user, $conversation
 Broadcast::channel('group.group.{groupId}', function ($user, $groupId) {
     return $user->groupConversations()->where('group_conversations.id', $groupId)->exists();
 });
+Broadcast::channel('notifications.{userId}', function ($user, $userId) {
+    Log::info('Vérification de l\'abonnement: Utilisateur ID: ' . $user->id . ' Canal ID: ' . $userId);
+    return (int) $user->id === (int) $userId;
+});
+
 
 

@@ -7,42 +7,56 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Events\MessageEvent;
+use App\Models\Notification;
+use App\Events\NotificationEvent;
+
+
 
 class ChatController extends Controller
 {
    
     public function send(Request $request, $receiver_id)
-    {
-        $request->validate([
-            'content' => 'required|string',
-        ]);
+{
+    $request->validate([
+        'content' => 'required|string',
+    ]);
 
-        $sender_id = Auth::id();
+    $sender_id = Auth::id();
 
-        $conversation = Conversation::firstOrCreate(
-            [
-                'user_one_id' => min($sender_id, $receiver_id),
-                'user_two_id' => max($sender_id, $receiver_id),
-            ]
-        );
+    $conversation = Conversation::firstOrCreate(
+        [
+            'user_one_id' => min($sender_id, $receiver_id),
+            'user_two_id' => max($sender_id, $receiver_id),
+        ]
+    );
 
-        $message = Message::create([
-            'conversation_id' => $conversation->id,
-            'sender_id' => $sender_id,
-            'content' => $request->content,
-            'is_read' => false, 
-        ]);
+    $message = Message::create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $sender_id,
+        'content' => $request->content,
+        'is_read' => false, 
+    ]);
+    $sender = auth()->user(); // ou User::find($sender_id);
+    // ✅ Créer la notification ici
+    $notif = Notification::create([
+        'sender_id' =>  $sender->id,
+        'receiver_id' => $receiver_id,
+        'message' => $sender->name . ' vous a envoyé un message.',
+        'type' => 'private',
+        'conversation_id' => $conversation->id,
+    ]);
 
-        $conversation->touch();
+    $conversation->touch();
+    broadcast(new NotificationEvent($notif))->toOthers();
 
-        broadcast(new MessageEvent($message))->toOthers();
-        \Log::info('Event triggered', ['message_id' => $message->id]);
+    broadcast(new MessageEvent($message))->toOthers();
+    \Log::info('Event triggered', ['message_id' => $message->id]);
 
-        return response()->json([
-            'message' => 'Message sent successfully',
-            'data' => $message
-        ], 201);
-    }
+    return response()->json([
+        'message' => 'Message sent successfully',
+        'data' => $message
+    ], 201);
+}
 
     public function getMyConversations()
     {
