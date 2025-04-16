@@ -29,9 +29,6 @@ class EventController extends Controller implements HasMiddleware
         );
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -61,18 +58,12 @@ class EventController extends Controller implements HasMiddleware
     }
 
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Event $event)
     {
         $event->load('user', 'participants');
         return  new EventResource($event::with('user')->get());
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Event $event)
     {
         Gate::authorize('modify', $event);
@@ -103,12 +94,9 @@ class EventController extends Controller implements HasMiddleware
         ]);
     }
 
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Event $event)
     {
+        //gate pour verifier que l user est actuellement
         Gate::authorize('modify', $event);
         $event->delete();
 

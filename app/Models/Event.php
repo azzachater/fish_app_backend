@@ -19,7 +19,6 @@ class Event extends Model
         'date',
         'user_id'
     ];
-    // Dans app/Models/Event.php
     protected $casts = [
         'date' => 'datetime:Y-m-d'
     ];

@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Profil;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Notifications\CustomVerifyEmailNotification;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
@@ -23,17 +24,20 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'verification_code',
+        'verification_code_expires_at'
     ];
 
     /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
-     * 
+     *
      */
     protected $hidden = [
         'password',
         'remember_token',
+        'verification_code'
     ];
 
     /**
@@ -46,6 +50,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'verification_code_expires_at' => 'datetime'
         ];
     }
 
@@ -97,6 +102,12 @@ class User extends Authenticatable
         return Conversation::where('user_one_id', $this->id)
             ->orWhere('user_two_id', $this->id);
     }
+    public function sendEmailVerificationNotification()
+    {
+        // Désactivez l'envoi automatique pour utiliser notre version personnalisée
+        // Ne faites rien ici, tout est géré dans le contrôleur
+    }
+
     public function groupConversations()
     {
         return $this->belongsToMany(GroupConversation::class, 'group_conversation_user', 'user_id', 'group_conversation_id');
@@ -105,5 +116,4 @@ class User extends Authenticatable
     {
         return $this->hasMany(Notification::class, 'receiver_id');
     }
-
 }
