@@ -95,5 +95,8 @@ public function conversations()
     return Conversation::where('user_one_id', $this->id)
             ->orWhere('user_two_id', $this->id);
 }  
-
+public function groupConversations()
+{
+    return $this->belongsToMany(GroupConversation::class, 'group_conversation_user', 'user_id', 'group_conversation_id');
+}
 }
