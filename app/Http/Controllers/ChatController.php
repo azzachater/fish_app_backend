@@ -6,42 +6,58 @@ use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Events\MessageEvent;
+use App\Models\Notification;
+use App\Events\NotificationEvent;
+
+
 
 class ChatController extends Controller
 {
-    // Envoyer un message à un user spécifique
+   
     public function send(Request $request, $receiver_id)
-    {
-        $request->validate([
-            'content' => 'required|string',
-        ]);
+{
+    $request->validate([
+        'content' => 'required|string',
+    ]);
 
-        $sender_id = Auth::id();
+    $sender_id = Auth::id();
 
-        $conversation = Conversation::firstOrCreate(
-            [
-                'user_one_id' => min($sender_id, $receiver_id),
-                'user_two_id' => max($sender_id, $receiver_id),
-            ]
-        );
+    $conversation = Conversation::firstOrCreate(
+        [
+            'user_one_id' => min($sender_id, $receiver_id),
+            'user_two_id' => max($sender_id, $receiver_id),
+        ]
+    );
 
-        $message = Message::create([
-            'conversation_id' => $conversation->id,
-            'sender_id' => $sender_id,
-            'content' => $request->content,
-            'is_read' => false, // Nouveau message non lu par défaut
-        ]);
+    $message = Message::create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $sender_id,
+        'content' => $request->content,
+        'is_read' => false, 
+    ]);
+    $sender = auth()->user(); // ou User::find($sender_id);
+    // ✅ Créer la notification ici
+    $notif = Notification::create([
+        'sender_id' =>  $sender->id,
+        'receiver_id' => $receiver_id,
+        'message' => $sender->name . ' vous a envoyé un message.',
+        'type' => 'private',
+        'conversation_id' => $conversation->id,
+    ]);
 
-        // Mettre à jour la date de la conversation
-        $conversation->touch();
+    $conversation->touch();
+    broadcast(new NotificationEvent($notif))->toOthers();
 
-        return response()->json([
-            'message' => 'Message sent successfully',
-            'data' => $message
-        ], 201);
-    }
+    broadcast(new MessageEvent($message))->toOthers();
+    \Log::info('Event triggered', ['message_id' => $message->id]);
 
-    // Récupérer toutes les conversations du user connecté avec le nombre de messages non lus
+    return response()->json([
+        'message' => 'Message sent successfully',
+        'data' => $message
+    ], 201);
+}
+
     public function getMyConversations()
     {
         $user = Auth::user();
@@ -81,7 +97,6 @@ class ChatController extends Controller
         return response()->json($conversations);
     }
 
-    // Récupérer les messages d'une conversation et marquer comme lus
     public function getMessages($conversation_id)
     {
         $user = Auth::user();
@@ -106,7 +121,6 @@ class ChatController extends Controller
         ]);
     }
 
-    // Nouvelle méthode pour marquer les messages comme lus
     public function markAsRead($conversation_id)
     {
         $user = Auth::user();
