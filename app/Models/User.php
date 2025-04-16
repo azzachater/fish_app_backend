@@ -67,7 +67,8 @@ class User extends Authenticatable
         return $this->hasMany(Tip::class);
     }
 
-    public function spots(){
+    public function spots()
+    {
         return $this->hasMany(Spot::class);
     }
     public function shares()
@@ -75,28 +76,34 @@ class User extends Authenticatable
         return $this->hasMany(Share::class);
     }
 
-    public function profil(){
+    public function profil()
+    {
         return $this->hasOne(Profil::class);
     }
     // app/Models/User.php
 
-public function profile()
-{
-    return $this->hasOne(Profile::class);
-}
+    public function profile()
+    {
+        return $this->hasOne(Profile::class);
+    }
 
-public function sentMessages()
-{
-    return $this->hasMany(Message::class, 'sender_id');
-}
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
 
-public function conversations()
-{
-    return Conversation::where('user_one_id', $this->id)
+    public function conversations()
+    {
+        return Conversation::where('user_one_id', $this->id)
             ->orWhere('user_two_id', $this->id);
-}  
-public function groupConversations()
-{
-    return $this->belongsToMany(GroupConversation::class, 'group_conversation_user', 'user_id', 'group_conversation_id');
-}
+    }
+    public function groupConversations()
+    {
+        return $this->belongsToMany(GroupConversation::class, 'group_conversation_user', 'user_id', 'group_conversation_id');
+    }
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'receiver_id');
+    }
+
 }

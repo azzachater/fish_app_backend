@@ -57,6 +57,11 @@ return [
             'channels' => explode(',', env('LOG_STACK', 'single')),
             'ignore_exceptions' => false,
         ],
+        'broadcast' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/broadcast.log'),
+            'level' => 'debug',
+        ],
 
         'single' => [
             'driver' => 'single',

@@ -18,6 +18,16 @@ use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\GroupChatController;
+use App\Http\Controllers\NotificationController;
+
+Route::post('/broadcasting/auth', function (Request $request) {
+  return Broadcast::auth($request);
+})->middleware('auth:api');
+Route::middleware('auth:sanctum')->group(function () {
+  Route::get('/notifications', [NotificationController::class, 'index']);
+  Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+  Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+});
 
 
 Route::middleware('auth:sanctum')->prefix('group')->group(function () {
@@ -26,6 +36,8 @@ Route::middleware('auth:sanctum')->prefix('group')->group(function () {
   Route::get('/my-groups', [GroupChatController::class, 'getMyGroups']);
   Route::get('/{groupId}/messages', [GroupChatController::class, 'getGroupMessages']);
   Route::post('/{groupId}/send', [GroupChatController::class, 'sendGroupMessage']);
+  Route::post('/{groupId}/mark-as-read', [GroupChatController::class, 'markGroupMessagesAsRead']);
+  Route::get('/{groupId}/unread-count', [GroupChatController::class, 'getGroupUnreadCount']);
 });
 
 
