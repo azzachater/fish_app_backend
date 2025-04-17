@@ -18,11 +18,16 @@ use Carbon\Carbon;
 class AuthController extends Controller
 {
     public function me(): JsonResponse
-    {
-        $user = Auth::user()->load('profile'); // Charge aussi le profil
+{
+    /** @var \App\Models\User|null $user */
+    $user = Auth::user();
 
-        return response()->json($user);
+    if (!$user) {
+        return response()->json(['error' => 'Unauthenticated'], 401);
     }
+
+    return response()->json($user->load('profile'));
+}
     public function getAllUsers()
 {
     $users = User::with('profile')->get(); // <-- charge aussi les profils
