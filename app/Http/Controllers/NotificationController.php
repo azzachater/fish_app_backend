@@ -10,28 +10,31 @@ use Illuminate\Http\Request;
 class NotificationController extends Controller
 {
     public function index()
-    {
-        $userId = auth()->id();
+{
+    $userId = auth()->id();
 
-        $notifications = Notification::where('receiver_id', $userId)
-            ->orderBy('created_at', 'desc')
-            ->get();
+    // Vérifie s’il y a des notifications non lues
+    $hasUnread = Notification::where('receiver_id', $userId)
+                    ->where('is_read', false)
+                    ->exists();
 
-        return response()->json($notifications);
-    }
+    // Puis marque les notifications comme lues
+    Notification::where('receiver_id', $userId)
+        ->where('is_read', false)
+        ->update(['is_read' => true]);
 
-    public function markAsRead($id)
-    {
-        $notification = Notification::where('id', $id)
-            ->where('receiver_id', auth()->id())
-            ->firstOrFail();
+    // Récupère toutes les notifications
+    $notifications = Notification::where('receiver_id', $userId)
+        ->orderBy('created_at', 'desc')
+        ->get();
 
-        $notification->is_read = true;
-        $notification->save();
+    return response()->json([
+        'unread' => $hasUnread,
+        'notifications' => $notifications
+    ]);
+}
 
-        return response()->json(['status' => 'success']);
-    }
-    public function destroy($id)
+   public function destroy($id)
 {
     $notification = Notification::where('id', $id)
         ->where('receiver_id', auth()->id())
@@ -45,5 +48,6 @@ class NotificationController extends Controller
 
     return response()->json(['status' => 'Notification supprimée avec succès.']);
 }
+
 
 }
