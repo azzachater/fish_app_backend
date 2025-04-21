@@ -58,44 +58,42 @@ class ChatController extends Controller
     ], 201);
 }
 
-    public function getMyConversations()
-    {
-        $user = Auth::user();
-        
-        $conversations = Conversation::where('user_one_id', $user->id)
-            ->orWhere('user_two_id', $user->id)
-            ->with([
-                'messages' => function($query) {
-                    $query->orderBy('created_at', 'desc');
-                },
-                'messages.sender.profile',
-                'userOne.profile',
-                'userTwo.profile'
-            ])
-            ->orderByDesc('updated_at')
-            ->get()
-            ->map(function($conversation) use ($user) {
-                // Compter les messages non lus
-                $unreadCount = $conversation->messages()
-                    ->where('sender_id', '!=', $user->id)
-                    ->where('is_read', false)
-                    ->count();
-                
-                // Récupérer le dernier message
-                $lastMessage = $conversation->messages->first();
-                
-                return [
-                    'id' => $conversation->id,
-                    'user_one' => $conversation->userOne,
-                    'user_two' => $conversation->userTwo,
-                    'last_message' => $lastMessage,
-                    'unread_count' => $unreadCount,
-                    'messages' => $conversation->messages
-                ];
-            });
+public function getMyConversations()
+{
+    $user = Auth::user();
 
-        return response()->json($conversations);
-    }
+    $conversations = Conversation::where('user_one_id', $user->id)
+        ->orWhere('user_two_id', $user->id)
+        ->with([
+            'messages' => function($query) {
+                $query->orderBy('created_at', 'desc')->limit(1); // 🔽 seulement le dernier message
+            },
+            'messages.sender.profile',
+            'userOne.profile',
+            'userTwo.profile'
+        ])
+        ->orderByDesc('updated_at')
+        ->get()
+        ->map(function($conversation) use ($user) {
+            $lastMessage = $conversation->messages->first();
+
+            $unreadCount = Message::where('conversation_id', $conversation->id)
+                ->where('sender_id', '!=', $user->id)
+                ->where('is_read', false)
+                ->count();
+
+            return [
+                'id' => $conversation->id,
+                'user_one' => $conversation->userOne,
+                'user_two' => $conversation->userTwo,
+                'last_message' => $lastMessage,
+                'unread_count' => $unreadCount
+            ];
+        })->values(); // 🔄 pour avoir un tableau sans index bizarres
+
+    return response()->json($conversations, 200, [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+}
+
 
     public function getMessages($conversation_id)
     {
@@ -118,7 +116,7 @@ class ChatController extends Controller
             'user_two' => $conversation->userTwo,
             'messages' => $conversation->messages,
             'unread_count' => 0 // Maintenant que c'est ouvert, plus de messages non lus
-        ]);
+        ], 200, [], JSON_UNESCAPED_SLASHES);
     }
 
     public function markAsRead($conversation_id)
