@@ -23,6 +23,41 @@ use App\Http\Controllers\SpotController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\GroupChatController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminAuthController;
+
+Route::post('/admin/login', [AdminAuthController::class, 'login']);
+Route::middleware('auth:sanctum')->post('/admin/logout', [AdminAuthController::class, 'logout']);
+Route::prefix('admin')->middleware(['auth:sanctum'])->group(function () {
+    // Users
+    Route::get('/users', [AdminController::class, 'getUsers']);
+    Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
+
+    // Posts
+    Route::get('/posts', [AdminController::class, 'getPosts']);
+    Route::delete('/posts/{id}', [AdminController::class, 'deletePost']);
+
+    // Products
+    Route::get('/products', [AdminController::class, 'getProducts']);
+    Route::delete('/products/{id}', [AdminController::class, 'deleteProduct']);
+
+    // Carts
+    Route::get('/carts', [AdminController::class, 'getCarts']);
+    Route::delete('/carts/{id}', [AdminController::class, 'deleteCart']);
+
+    // Events
+    Route::get('/events', [AdminController::class, 'getEvents']);
+    Route::delete('/events/{id}', [AdminController::class, 'deleteEvent']);
+
+    // Tips
+    Route::get('/tips', [AdminController::class, 'getTips']);
+    Route::delete('/tips/{id}', [AdminController::class, 'deleteTip']);
+
+    // Spots
+    Route::get('/spots', [AdminController::class, 'getSpots']);
+    Route::delete('/spots/{id}', [AdminController::class, 'deleteSpot']);
+});
+
 
 /*
 |--------------------------------------------------------------------------
