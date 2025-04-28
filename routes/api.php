@@ -25,10 +25,16 @@ use App\Http\Controllers\GroupChatController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminAuthController;
+use App\Http\Controllers\DashboardController;
+
+
 
 Route::post('/admin/login', [AdminAuthController::class, 'login']);
 Route::middleware('auth:sanctum')->post('/admin/logout', [AdminAuthController::class, 'logout']);
 Route::prefix('admin')->middleware(['auth:sanctum'])->group(function () {
+    // Dashbord
+    Route::get('/dashboard', [DashboardController::class, 'index']);  
+
     // Users
     Route::get('/users', [AdminController::class, 'getUsers']);
     Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
