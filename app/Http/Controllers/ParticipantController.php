@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Resources\ParticipantResource;
 use App\Models\Participant;
 use App\Models\Event;
+use App\Models\User;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Gate;
@@ -18,53 +19,59 @@ class ParticipantController extends Controller implements HasMiddleware
             new Middleware('auth:sanctum',except:['index','show'])
         ];
     }
-    public function index(Event $event)
-    {
-        // Charger les participants et leurs utilisateurs
-        $participants = $event->participants()->with('user')->get();
-    
-        return response()->json([
-            'event' => $event->name,
-            'participants' => $participants->map(function ($participant) {
-                return [
-                    'id' => $participant->id,
-                    'name' => $participant->user->name,
-                    'email' => $participant->user->email,
-                    'created_at' => $participant->created_at,
-                ];
-            }),
-        ]);
+    public function index()
+{
+    $events = Event::with(['participants.user'])->get();
+
+    return response()->json([
+        'data' => $events->map(function ($event) {
+            return [
+                'id' => $event->id,
+                'title' => $event->title,
+                'description' => $event->description,
+                'location' => $event->location,
+                'date' => $event->date,
+                'user_id' => $event->user_id,
+                'participants' => $event->participants->map(function ($participant) {
+                    return [
+                        'user_id' => $participant->user_id,
+                        'user' => [
+                            'id' => $participant->user->id,
+                            'name' => $participant->user->name,
+                            'avatar' => $participant->user->avatar
+                            // Ajoutez d'autres champs si nécessaire
+                        ]
+                    ];
+                })
+            ];
+        })
+    ]);
+}
+
+
+//Store a newly created resource in storage.
+public function store(Request $request, $eventId) // Ajoutez $eventId comme paramètre
+{
+    $request->validate([
+        'user_id' => 'required|exists:users,id'
+    ]);
+
+    $event = Event::findOrFail($eventId); // Utilisez le $eventId du paramètre
+    $user = User::findOrFail($request->user_id);
+
+    if ($event->participants()->where('user_id', $user->id)->exists()) {
+        return response()->json(['message' => 'Déjà inscrit'], 409);
     }
-    
 
-//Store a newly created resource in storage. 
-public function store(Request $request)
-    {
-        // Vérifier si l'utilisateur est connecté (déjà géré par middleware)
-        
-        // Valider la requête
-        $request->validate([
-            'event_name' => 'required|string|exists:events,name',
-        ]);
+    $participant = $event->participants()->create([
+        'user_id' => $user->id
+    ]);
 
-        // Récupérer l'utilisateur authentifié
-        $user = \Illuminate\Support\Facades\Auth::user();
-
-        // Récupérer l'événement par son nom
-        $event = Event::where('name', $request->event_name)->firstOrFail();
-
-        // Vérifier si l'utilisateur est déjà inscrit
-        if ($event->participants()->where('user_id', $user->id)->exists()) {
-            return response()->json(['message' => 'Vous êtes déjà inscrit à cet événement.'], 400);
-        }
-
-        // Ajouter le participant
-        $participant = $event->participants()->create([
-            'user_id' => $user->id,
-        ]);
-
-        return new ParticipantResource($participant);
-    }
+    return response()->json([
+        'message' => 'Inscription réussie',
+        'event' => $event->load(['participants.user']) // Chargez les relations
+    ], 201);
+}
     public function show(Event $event, Participant $participant)
 {
     // Vérifier si le participant appartient bien à cet événement

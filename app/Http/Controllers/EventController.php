@@ -102,4 +102,19 @@ class EventController extends Controller implements HasMiddleware
 
         return ['message' => 'the event was deleted'];
     }
+    public function joinEvent(Event $event, Request $request)
+{
+    $user = $request->user();
+
+    if ($event->participants()->where('user_id', $user->id)->exists()) {
+        return response()->json(['message' => 'Vous participez déjà'], 409);
+    }
+
+    $event->participants()->attach($user->id);
+
+    return response()->json([
+        'message' => 'Participation enregistrée',
+        'event' => $event->load(['user', 'participants'])
+    ], 201);
+}
 }

@@ -86,6 +86,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Produits & Panier
     Route::apiResource('products', ProductController::class);
     Route::post('products/{productId}/add-to-cart', [ProductController::class, 'addToCartFromProduct']);
+    Route::get('orders',[ProductController::class, 'placeOrder']);
+    Route::get('/products/{product}/check-stock/{quantity}', [ProductController::class, 'checkStock']);
 
     Route::prefix('cart')->group(function () {
         Route::get('/', [CartController::class, 'index']);
@@ -99,6 +101,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('events.participants', ParticipantController::class)
         ->scoped()
         ->except('update');
+    Route::post('events/{event}/participants', [ParticipantController::class, 'store']);
+    Route::post('/events/{event}/join', [EventController::class, 'joinEvent']);
+
 
     // Conseils (Tips)
     Route::apiResource('tips', TipController::class);
