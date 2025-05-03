@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PasswordResetCodeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
@@ -35,6 +36,10 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/verify-code', [AuthController::class, 'verifyCode']);
 Route::post('/resend-code', [AuthController::class, 'resendCode']);
 Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
+
+Route::post('/send-reset-code', [PasswordResetCodeController::class, 'sendResetCode']);
+Route::post('/verify-reset-code', [PasswordResetCodeController::class, 'verifyResetCode']);
+Route::post('/update-password', [PasswordResetCodeController::class, 'updatePassword']);
 
 /*
 |--------------------------------------------------------------------------
