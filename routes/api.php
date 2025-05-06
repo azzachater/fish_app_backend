@@ -24,6 +24,7 @@ use App\Http\Controllers\SpotController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\GroupChatController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -99,7 +100,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/add', [CartController::class, 'addToCart']);
         Route::put('/{cart}', [CartController::class, 'update']);
         Route::delete('/{cart}', [CartController::class, 'removeFromCart']);
+        Route::post('/checkout', [ProductController::class, 'placeOrder']);
     });
+
+    // order
+    Route::prefix('orders')->group(function () {
+        Route::get('/', [OrderController::class, 'index']); // Pour fetchOrders() (Flutter)
+        Route::post('/', [OrderController::class, 'store']); // Pour createOrder() (Flutter)
+        Route::get('/{id}', [OrderController::class, 'show']); // Optionnel : détail d'une commande
+        Route::put('/{id}', [OrderController::class, 'update']); // Optionnel : mise à jour
+        Route::delete('/{id}', [OrderController::class, 'destroy']); // Optionnel : suppression
+    });
+
 
     // Événements
     Route::apiResource('events', EventController::class);

@@ -9,20 +9,20 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('password_reset_codes', function (Blueprint $table) {
-            $table->id();
-            $table->string('email')->index();
-            $table->string('code');
-            $table->timestamp('created_at')->nullable();
-        });
+        if (!Schema::hasTable('password_reset_codes')) {
+            Schema::create('password_reset_codes', function (Blueprint $table) {
+                $table->id();
+                $table->string('email')->index();
+                $table->string('code', 6);  // Code à 6 chiffres
+                $table->timestamp('expires_at');  // Ajout recommandé
+                $table->timestamps();
+            });
+        }
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('password_reset_codes');
     }

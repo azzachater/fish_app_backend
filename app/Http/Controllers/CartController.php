@@ -42,12 +42,14 @@ class CartController extends Controller
 
         $product = Product::findOrFail($request->product_id);
 
-        // Vérifier le stock disponible
+        // On vérifie le stock mais on ne décrémente pas
         if ($product->stock < $request->quantity) {
             return response()->json(['message' => 'Stock insuffisant'], 400);
         }
 
-        $cart = Cart::where('user_id', Auth::id())->where('product_id', $product->id)->first();
+        $cart = Cart::where('user_id', Auth::id())
+            ->where('product_id', $product->id)
+            ->first();
 
         if ($cart) {
             $cart->update(['quantity' => $cart->quantity + $request->quantity]);
@@ -59,10 +61,7 @@ class CartController extends Controller
             ]);
         }
 
-
-        // Décrémenter le stock après l'ajout au panier
-        $product->decrement('stock', $request->quantity);
-
+        // SUPPRIMER la ligne qui décrémente le stock
         return response()->json(['message' => 'Produit ajouté au panier', 'data' => $cart]);
     }
 
@@ -83,30 +82,22 @@ class CartController extends Controller
 
         $product = Product::findOrFail($cart->product_id);
 
-        if ($request->quantity > $cart->quantity) {
-            $difference = $request->quantity - $cart->quantity;
-            if ($product->stock < $difference) {
-                return response()->json(['message' => 'Stock insuffisant'], 400);
-            }
-            $product->decrement('stock', $difference);
-        } elseif ($request->quantity < $cart->quantity) {
-            $difference = $cart->quantity - $request->quantity;
-            $product->increment('stock', $difference);
+        // On vérifie seulement le stock, pas de modification
+        if ($request->quantity > $product->stock) {
+            return response()->json(['message' => 'Stock insuffisant'], 400);
         }
 
         $cart->update(['quantity' => $request->quantity]);
 
         return response()->json(['message' => 'Quantité mise à jour', 'data' => $cart]);
     }
-
     public function removeFromCart(Cart $cart)
     {
         if ($cart->user_id !== Auth::id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $product = Product::findOrFail($cart->product_id);
-        $product->increment('stock', $cart->quantity);
+        // SUPPRIMER la réincrémentation du stock
         $cart->delete();
 
         return response()->json(['message' => 'Produit retiré du panier']);

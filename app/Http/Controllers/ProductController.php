@@ -126,46 +126,83 @@ class ProductController extends Controller implements HasMiddleware
         }
         return response()->json(['message' => 'Produit ajouté au panier', 'data' => $cart]);
     }
-    public function placeOrder(){
+    public function placeOrder(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => 'required|string',
+            'address' => 'required|string',
+            'payment_method' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+        }
+
         $user = Auth::user();
         $cartItems = Cart::with('product')->where('user_id', $user->id)->get();
-        if($cartItems->isEmpty()){
-            return response()->json(['message'=> 'Votre panier est vide'],400);
+
+        if ($cartItems->isEmpty()) {
+            return response()->json(['message' => 'Votre panier est vide'], 400);
         }
 
         DB::beginTransaction();
-        try{
-            foreach ($cartItems as $item){
+        try {
+            foreach ($cartItems as $item) {
                 $product = $item->product;
 
-                if( $product->stock < $item->quantity){
+                // Vérification finale du stock avant commande
+                if ($product->stock < $item->quantity) {
                     DB::rollBack();
-                    return response()->json(['message' => "Stock insuffisant pour le produit {$product->name}"], 400);
+                    return response()->json([
+                        'message' => "Stock insuffisant pour le produit {$product->name}. Il ne reste que {$product->stock} unité(s)",
+                        'product_id' => $product->id
+                    ], 400);
                 }
+
+                // Création de la commande
                 Order::create([
                     'user_id' => $user->id,
                     'product_id' => $product->id,
                     'quantity' => $item->quantity,
                     'price' => $product->price * $item->quantity,
+                    'phone' => $request->phone,
+                    'address' => $request->address,
+                    'payment_method' => $request->payment_method,
+                    'status' => 'pending'
                 ]);
+
+                // Décrémentation du stock SEULEMENT ICI
                 $product->decrement('stock', $item->quantity);
             }
+
+            // Vider le panier après commande
             Cart::where('user_id', $user->id)->delete();
+
             DB::commit();
             return response()->json(['message' => 'Commande passée avec succès']);
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Erreur lors de la commande', 'error' => $e->getMessage()], 500);
+            return response()->json([
+                'message' => 'Erreur lors de la commande',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
     }
     public function checkStock($productId, $quantity)
     {
-        $product = Product::findOrFail($productId);
+        try {
+            $product = Product::findOrFail($productId);
 
-        return response()->json([
-            'available' => $product->stock >= $quantity,
-            'current_stock' => $product->stock
-        ]);
+            return response()->json([
+                'available' => $product->stock >= $quantity,
+                'current_stock' => $product->stock,
+                'product_id' => $product->id // Pour le débogage
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'available' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

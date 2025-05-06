@@ -35,4 +35,8 @@ class Product extends Model
     {
         return $this->hasMany(Cart::class); // Un produit peut être dans plusieurs paniers
     }
+    public function orders()
+{
+    return $this->hasManyThrough(Order::class, OrderItem::class);
+}
 }
