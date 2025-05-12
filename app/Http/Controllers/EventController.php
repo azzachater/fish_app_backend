@@ -61,7 +61,7 @@ class EventController extends Controller implements HasMiddleware
     public function show(Event $event)
     {
         $event->load('user', 'participants');
-        return  new EventResource($event::with('user')->get());
+        return new EventResource($event);
     }
 
     public function update(Request $request, Event $event)
@@ -103,18 +103,13 @@ class EventController extends Controller implements HasMiddleware
         return ['message' => 'the event was deleted'];
     }
     public function joinEvent(Event $event, Request $request)
-{
-    $user = $request->user();
+    {
+        $user = $request->user();
+        $event->participants()->syncWithoutDetaching([$user->id]);
 
-    if ($event->participants()->where('user_id', $user->id)->exists()) {
-        return response()->json(['message' => 'Vous participez déjà'], 409);
+        return response()->json([
+            'message' => 'Participation enregistrée',
+            'event' => $event->load(['user', 'participants'])
+        ], 201);
     }
-
-    $event->participants()->attach($user->id);
-
-    return response()->json([
-        'message' => 'Participation enregistrée',
-        'event' => $event->load(['user', 'participants'])
-    ], 201);
-}
 }
