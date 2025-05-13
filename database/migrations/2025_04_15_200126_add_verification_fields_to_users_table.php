@@ -8,26 +8,24 @@ return new class extends Migration {
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            // Ajoutez ces nouveaux champs
-            $table->string('verification_code')->nullable()->after('email_verified_at');
-            $table->timestamp('verification_code_expires_at')->nullable()->after('verification_code');
+            // Ajout conditionnel
+            if (!Schema::hasColumn('users', 'verification_code')) {
+                $table->string('verification_code', 6)->nullable()->after('email_verified_at');
+            }
 
-            // Supprimez l'ancien champ si vous ne l'utilisez plus
-            $table->dropColumn('email_verification_token');
+            if (!Schema::hasColumn('users', 'verification_code_expires_at')) {
+                $table->timestamp('verification_code_expires_at')->nullable()->after('verification_code');
+            }
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            // Pour annuler les changements
-            $table->string('email_verification_token')->nullable();
+            // Suppression conditionnelle (optionnel)
             $table->dropColumn(['verification_code', 'verification_code_expires_at']);
         });
     }

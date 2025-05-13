@@ -63,6 +63,7 @@ foreach ($usersToNotify as $user) {
 
     broadcast(new \App\Events\NotificationEvent($notif))->toOthers(); // Pour ne pas renvoyer à l'expéditeur
 }
+
         return response()->json([
             'id' => $event->id,
             'title' => $event->title,
@@ -78,7 +79,7 @@ foreach ($usersToNotify as $user) {
     public function show(Event $event)
     {
         $event->load('user', 'participants');
-        return  new EventResource($event::with('user')->get());
+        return new EventResource($event);
     }
 
     public function update(Request $request, Event $event)
@@ -118,5 +119,15 @@ foreach ($usersToNotify as $user) {
         $event->delete();
 
         return ['message' => 'the event was deleted'];
+    }
+    public function joinEvent(Event $event, Request $request)
+    {
+        $user = $request->user();
+        $event->participants()->syncWithoutDetaching([$user->id]);
+
+        return response()->json([
+            'message' => 'Participation enregistrée',
+            'event' => $event->load(['user', 'participants'])
+        ], 201);
     }
 }

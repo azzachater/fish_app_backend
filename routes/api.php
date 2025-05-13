@@ -26,6 +26,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\OrderController;
 
 
 
@@ -125,21 +126,38 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Produits & Panier
+    // Produits & Panier
     Route::apiResource('products', ProductController::class);
     Route::post('products/{productId}/add-to-cart', [ProductController::class, 'addToCartFromProduct']);
+    Route::get('orders',[ProductController::class, 'placeOrder']);
+    Route::get('/products/{product}/check-stock/{quantity}', [ProductController::class, 'checkStock']);
 
     Route::prefix('cart')->group(function () {
         Route::get('/', [CartController::class, 'index']);
         Route::post('/add', [CartController::class, 'addToCart']);
         Route::put('/{cart}', [CartController::class, 'update']);
         Route::delete('/{cart}', [CartController::class, 'removeFromCart']);
+        Route::post('/checkout', [ProductController::class, 'placeOrder']);
     });
 
+    // order
+    Route::prefix('orders')->group(function () {
+        Route::get('/', [OrderController::class, 'index']); // Pour fetchOrders() (Flutter)
+        Route::post('/', [OrderController::class, 'store']); // Pour createOrder() (Flutter)
+        Route::get('/{id}', [OrderController::class, 'show']); // Optionnel : détail d'une commande
+        Route::put('/{id}', [OrderController::class, 'update']); // Optionnel : mise à jour
+        Route::delete('/{id}', [OrderController::class, 'destroy']); // Optionnel : suppression
+    });
+
+    // Événements
     // Événements
     Route::apiResource('events', EventController::class);
     Route::apiResource('events.participants', ParticipantController::class)
         ->scoped()
         ->except('update');
+    Route::post('events/{event}/participants', [ParticipantController::class, 'store']);
+    Route::post('/events/{event}/join', [EventController::class, 'joinEvent']);
+
 
     // Conseils (Tips)
     Route::apiResource('tips', TipController::class);

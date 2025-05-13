@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\EmailVerification;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
+use App\Mail\ResetCodeMail;
 
 
 class AuthController extends Controller
@@ -182,5 +184,7 @@ public function verifyCode(Request $request)
             'message '=> 'Logged out.'
                 ];
     }
+
+
 
 }

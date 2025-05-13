@@ -11,6 +11,8 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Cart;
+use Illuminate\Support\Facades\DB;
+use App\Models\Order;
 
 
 class ProductController extends Controller implements HasMiddleware
@@ -31,55 +33,6 @@ class ProductController extends Controller implements HasMiddleware
             'message' => $products->isEmpty() ? 'No products found' : 'Products retrieved successfully'
         ]);
     }
-    /*public function store(Request $request)
-    {
-        // Validation des données d'entrée
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'price' => 'required|numeric',
-            'unit' => 'required|string',
-            'image' => 'required|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'stock' => 'required|integer|min:0',
-            'category' => 'required|string',
-        ]);
-
-        // Vérification des erreurs de validation
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'All fields are mandatory',
-                'errors' => $validator->messages(),
-            ], 422);
-        }
-
-        // Gestion de l'image
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('public/products');
-            $imageName = basename($imagePath); // Récupérer juste le nom de l'image
-        } else {
-            return response()->json([
-                'message' => 'Image upload failed',
-            ], 500);
-        }
-        $fields['user_id'] = Auth::id();
-
-        // Création du produit
-        $product = Product::create([
-            'name' => $request->name,
-            'description' => $request->description,
-            'price' => $request->price,
-            'unit' => $request->unit,
-            'image' => $imageName,
-            'stock' => $request->stock,
-            'category' => $request->category,
-            'user_id' => Auth::id(),
-        ]);
-
-        return response()->json([
-            'message' => 'Product created successfully',
-            'data' => new ProductResource($product),
-        ], 201);
-    }*/
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -115,36 +68,6 @@ class ProductController extends Controller implements HasMiddleware
     {
         return new ProductResource($product);
     }
-    /*public function update(Request $request, Product $product)
-    {
-        Gate::authorize('modify', $product);
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'price' => 'required|numeric',
-            'unit' => 'required|string',
-            'image' => 'required|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'stock' => 'required|integer|min:0',
-            'category' => 'required|string',
-        ]);
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'All fields are mandetory',
-                'error' => $validator->messages(),
-            ], 422);
-        }
-
-        $product->update([
-            'name' => $request->name,
-            'description' => $request->description,
-            'price' => $request->price,
-            'stock' => $request->stock,
-        ]);
-        return response()->json([
-            'message' => 'Product updated successfully',
-            'data' => new ProductResource($product)
-        ], 200);
-    }*/
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -157,7 +80,7 @@ class ProductController extends Controller implements HasMiddleware
             'category' => 'required|string',
         ]);
 
-        // Récupérer le journal de l'utilisateur connecté
+        // Récupérer le produit de l'utilisateur connecté
         $product = Product::where('user_id', Auth::id())->findOrFail($id);
 
         // Mettre à jour les données
@@ -201,9 +124,85 @@ class ProductController extends Controller implements HasMiddleware
                 'quantity' => $request->quantity,
             ]);
         }
-
-        $product->decrement('stock', $request->quantity);
-
         return response()->json(['message' => 'Produit ajouté au panier', 'data' => $cart]);
+    }
+    public function placeOrder(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => 'required|string',
+            'address' => 'required|string',
+            'payment_method' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+        }
+
+        $user = Auth::user();
+        $cartItems = Cart::with('product')->where('user_id', $user->id)->get();
+
+        if ($cartItems->isEmpty()) {
+            return response()->json(['message' => 'Votre panier est vide'], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            foreach ($cartItems as $item) {
+                $product = $item->product;
+
+                // Vérification finale du stock avant commande
+                if ($product->stock < $item->quantity) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => "Stock insuffisant pour le produit {$product->name}. Il ne reste que {$product->stock} unité(s)",
+                        'product_id' => $product->id
+                    ], 400);
+                }
+
+                // Création de la commande
+                Order::create([
+                    'user_id' => $user->id,
+                    'product_id' => $product->id,
+                    'quantity' => $item->quantity,
+                    'price' => $product->price * $item->quantity,
+                    'phone' => $request->phone,
+                    'address' => $request->address,
+                    'payment_method' => $request->payment_method,
+                    'status' => 'pending'
+                ]);
+
+                // Décrémentation du stock SEULEMENT ICI
+                $product->decrement('stock', $item->quantity);
+            }
+
+            // Vider le panier après commande
+            Cart::where('user_id', $user->id)->delete();
+
+            DB::commit();
+            return response()->json(['message' => 'Commande passée avec succès']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Erreur lors de la commande',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function checkStock($productId, $quantity)
+    {
+        try {
+            $product = Product::findOrFail($productId);
+
+            return response()->json([
+                'available' => $product->stock >= $quantity,
+                'current_stock' => $product->stock,
+                'product_id' => $product->id // Pour le débogage
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'available' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
