@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\NewOrderEvent;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -85,9 +84,6 @@ class OrderController extends Controller
                 }
 
                 Cart::where('user_id', $user->id)->delete();
-
-                event(new NewOrderEvent($order));
-
                 return response()->json([
                     'message' => 'Order created successfully',
                     'order' => $order->load('items.product')
