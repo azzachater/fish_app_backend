@@ -7,6 +7,9 @@ use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Http\Request;
 use App\Models\Spot;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Notification;
+use App\Events\NotificationEvent;
+use App\Models\User;
 
 class SpotController extends Controller implements HasMiddleware
 {
@@ -42,11 +45,26 @@ class SpotController extends Controller implements HasMiddleware
             'longitude' => 'required|numeric',
             'description' => 'required|string|max:255',
             'fish_species' => 'required|string|max:255',
-            'recommendedTechniques' => 'nullable|string|max:255', // ✅ string obligatoire
-            'depth' => 'required|numeric', // ✅ numérique obligatoire
+            'recommendedTechniques' => 'nullable|string|max:255', 
+            'depth' => 'required|numeric', 
         ]);
 
         $spot = $request->user()->spots()->create($fields);
+        // 🔔 Notification à tous les utilisateurs sauf l’auteur
+    $sender = $request->user();
+    $usersToNotify = User::where('id', '!=', $sender->id)->get();
+
+    foreach ($usersToNotify as $user) {
+        $notif = Notification::create([
+            'sender_id' => $sender->id,
+            'receiver_id' => $user->id,
+            'message' => $sender->name . ' a ajouté un nouveau spot de pêche : ' . $spot->name,
+            'type' => 'spot',
+            'spot_id' => $spot->id, // Ajoute ce champ dans ta table `notifications` si nécessaire
+        ]);
+
+        broadcast(new NotificationEvent($notif))->toOthers(); // Pour ne pas envoyer au sender
+    }
         return response()->json($spot, 201);
     }
 

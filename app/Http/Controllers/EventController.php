@@ -45,7 +45,24 @@ class EventController extends Controller implements HasMiddleware
             'date' => $validated['date'], // Laravel convertit automatiquement en DateTime
             'user_id' => $request->user()->id,
         ]);
+// 🔔 Créer les notifications pour tous les utilisateurs sauf l'auteur
+$sender = $request->user();
+if (!$sender) {
+    return response()->json(['message' => 'Utilisateur non authentifié'], 401);
+}
+$usersToNotify = \App\Models\User::where('id', '!=', $sender->id)->get();
 
+foreach ($usersToNotify as $user) {
+    $notif = \App\Models\Notification::create([
+        'sender_id' => $sender->id,
+        'receiver_id' => $user->id,
+        'message' => $sender->name . ' a organisé un nouvel événement de pêche : ' . $event->title,
+        'type' => 'event', // Assure-toi que la colonne 'type' accepte cette valeur
+        'event_id' => $event->id, // ajoute cette colonne dans ta table notifications si besoin
+    ]);
+
+    broadcast(new \App\Events\NotificationEvent($notif))->toOthers(); // Pour ne pas renvoyer à l'expéditeur
+}
         return response()->json([
             'id' => $event->id,
             'title' => $event->title,
