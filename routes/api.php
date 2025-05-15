@@ -129,6 +129,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Pêche (Logs & Spots)
     Route::apiResource('logs', FishingLogController::class);
     Route::apiResource('spots', SpotController::class);
+    Route::post('spots/{id}/vote', [SpotController::class, 'vote']);
 
     // Chat
     Route::prefix('conversations')->group(function () {

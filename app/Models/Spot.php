@@ -19,6 +19,15 @@ class Spot extends Model
         'recommendedTechniques',
         'depth',
         'user_id',
+        'upvotes',
+        'downvotes',
+        'voter_ids'
+    ];
+    protected $casts = [
+        'voter_ids' => 'array',
+        'latitude' => 'float',
+        'longitude' => 'float',
+        'depth' => 'float'
     ];
 
     public function user()

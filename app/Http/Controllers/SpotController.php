@@ -7,6 +7,7 @@ use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Http\Request;
 use App\Models\Spot;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SpotController extends Controller implements HasMiddleware
 {
@@ -17,22 +18,26 @@ class SpotController extends Controller implements HasMiddleware
         ];
     }
     public function index()
-{
-    return response()->json(
-        Spot::all()->map(function ($spot) {
-            return [
-                'id' => (int)$spot->id,
-                'name' => $spot->name,
-                'latitude' => (float)$spot->latitude,
-                'longitude' => (float)$spot->longitude,
-                'description' => $spot->description,
-                'fish_species' => $spot->fish_species,
-                'recommended_techniques' => $spot->recommendedTechniques,
-                'depth' => $spot->depth !== null ? (float)$spot->depth : null,
-            ];
-        })
-    );
-}
+    {
+        return response()->json(
+            Spot::all()->map(function ($spot) {
+                return [
+                    'id' => (int)$spot->id,
+                    'name' => $spot->name,
+                    'latitude' => (float)$spot->latitude,
+                    'longitude' => (float)$spot->longitude,
+                    'description' => $spot->description,
+                    'fish_species' => $spot->fish_species,
+                    'recommended_techniques' => $spot->recommendedTechniques,
+                    'depth' => $spot->depth !== null ? (float)$spot->depth : null,
+                    'upvotes' => $spot->upvotes ?? 0, // Valeur par défaut
+                    'downvotes' => $spot->downvotes ?? 0, // Valeur par défaut
+                    'voter_ids' => $spot->voter_ids ?? []
+                ];
+            })
+        );
+    }
+
 
     public function store(Request $request)
     {
@@ -82,5 +87,49 @@ class SpotController extends Controller implements HasMiddleware
         $spot->delete();
 
         return response()->json(null, 204);
+    }
+
+    // Ajoutez cette méthode dans SpotController.php
+    public function vote(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'is_upvote' => 'required|boolean',
+                'user_id' => 'required|integer|exists:users,id'
+            ]);
+
+            $spot = Spot::findOrFail($id);
+            $voterIds = $spot->voter_ids ?? [];
+
+            if (in_array($request->user_id, $voterIds)) {
+                return response()->json([
+                    'message' => 'Vous avez déjà voté pour ce spot',
+                    'error' => 'already_voted'
+                ], 409);
+            }
+
+            $spot->update([
+                $request->is_upvote ? 'upvotes' : 'downvotes' => DB::raw(($request->is_upvote ? 'upvotes' : 'downvotes') . ' + 1'),
+                'voter_ids' => array_merge($voterIds, [$request->user_id])
+            ]);
+
+            if ($spot->downvotes >= 5) {
+                $spot->delete();
+                return response()->json([
+                    'message' => 'Spot supprimé suite à plusieurs signalements',
+                    'deleted' => true
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Vote enregistré',
+                'upvotes' => $spot->upvotes,
+                'downvotes' => $spot->downvotes
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Spot non trouvé'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Erreur serveur'], 500);
+        }
     }
 }
