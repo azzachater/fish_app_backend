@@ -35,10 +35,11 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
+
         $request->validate([
             'phone' => 'required|string|max:20',
             'address' => 'required|string|max:255',
-            'payment_method' => 'required|in:cash_on_delivery,online'
+            'payment_method' => 'required|in:cash_on_delivery,online',
         ]);
 
         $user = Auth::user();

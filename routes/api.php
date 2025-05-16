@@ -1,5 +1,5 @@
 <?php
-
+use App\Http\Controllers\PasswordResetCodeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
@@ -78,6 +78,10 @@ Route::post('/verify-code', [AuthController::class, 'verifyCode']);
 Route::post('/resend-code', [AuthController::class, 'resendCode']);
 Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
 
+Route::post('/send-reset-code', [PasswordResetCodeController::class, 'sendResetCode']);
+Route::post('/verify-reset-code', [PasswordResetCodeController::class, 'verifyResetCode']);
+Route::post('/update-password', [PasswordResetCodeController::class, 'updatePassword']);
+
 /*
 |--------------------------------------------------------------------------
 | Routes Protégées (Authentifiées)
@@ -126,7 +130,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Produits & Panier
-    // Produits & Panier
+   // Produits & Panier
     Route::apiResource('products', ProductController::class);
     Route::post('products/{productId}/add-to-cart', [ProductController::class, 'addToCartFromProduct']);
     Route::get('orders',[ProductController::class, 'placeOrder']);
@@ -148,7 +152,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{id}', [OrderController::class, 'update']); // Optionnel : mise à jour
         Route::delete('/{id}', [OrderController::class, 'destroy']); // Optionnel : suppression
     });
-
     // Événements
     // Événements
     Route::apiResource('events', EventController::class);
@@ -166,6 +169,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Pêche (Logs & Spots)
     Route::apiResource('logs', FishingLogController::class);
     Route::apiResource('spots', SpotController::class);
+    Route::post('spots/{id}/vote', [SpotController::class, 'vote']);
 
     // Chat
     Route::prefix('conversations')->group(function () {
