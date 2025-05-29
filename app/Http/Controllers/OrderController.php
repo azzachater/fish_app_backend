@@ -8,6 +8,9 @@ use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Notification;
+use App\Events\NotificationEvent;
+
 
 class OrderController extends Controller
 {
@@ -67,22 +70,32 @@ class OrderController extends Controller
                 ]);
 
                 foreach ($cartItems as $item) {
-                    // Vérification du stock avant création
-                    if ($item->product->stock < $item->quantity) {
-                        throw new \Exception("Insufficient stock for product: {$item->product->name}");
-                    }
+    if ($item->product->stock < $item->quantity) {
+        throw new \Exception("Insufficient stock for product: {$item->product->name}");
+    }
 
-                    OrderItem::create([
-                        'order_id' => $order->id,
-                        'product_id' => $item->product_id,
-                        'seller_id' => $item->product->user_id,
-                        'quantity' => $item->quantity,
-                        'price' => $item->product->price
-                    ]);
+    OrderItem::create([
+        'order_id' => $order->id,
+        'product_id' => $item->product_id,
+        'seller_id' => $item->product->user_id,
+        'quantity' => $item->quantity,
+        'price' => $item->product->price
+    ]);
 
-                    // Mise à jour du stock
-                    $item->product->decrement('stock', $item->quantity);
-                }
+    // 🔄 Mise à jour du stock
+    $item->product->decrement('stock', $item->quantity);
+
+    // 🔔 Notification au vendeur
+    $notification = Notification::create([
+        'sender_id' => $user->id,
+        'receiver_id' => $item->product->user_id,
+        'message' => "{$user->name} a commandé votre produit : {$item->product->name}",
+        'type' => 'product',
+    ]);
+
+    // 🔴 Optionnel : Événement pour WebSocket
+    broadcast(new NotificationEvent($notification))->toOthers();
+}
 
                 Cart::where('user_id', $user->id)->delete();
                 return response()->json([

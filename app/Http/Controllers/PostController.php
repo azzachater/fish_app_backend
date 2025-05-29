@@ -9,6 +9,9 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Notification;
+use App\Events\NotificationEvent;
+use App\Models\User;
 
 class PostController extends Controller implements HasMiddleware
 {
@@ -57,6 +60,21 @@ class PostController extends Controller implements HasMiddleware
         }
 
         $post = $request->user()->posts()->create($fields);
+         // 🔔 Notification à tous les utilisateurs sauf l’auteur
+    $sender = $request->user();
+    $usersToNotify = User::where('id', '!=', $sender->id)->get();
+
+    foreach ($usersToNotify as $user) {
+        $notif = Notification::create([
+            'sender_id' => $sender->id,
+            'receiver_id' => $user->id,
+            'message' => $sender->name . ' a ajouté un nouveau post ',
+            'type' => 'post',
+            'post_id' => $post->id, // Ajoute ce champ dans ta table `notifications` si nécessaire
+        ]);
+
+        broadcast(new NotificationEvent($notif))->toOthers(); // Pour ne pas envoyer au sender
+    }
 
         return response()->json([
             'id' => (string) $post->id,

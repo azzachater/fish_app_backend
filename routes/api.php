@@ -129,7 +129,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{postId}/share', [ShareController::class, 'sharePost']);
     });
 
-    // Produits & Panier
    // Produits & Panier
     Route::apiResource('products', ProductController::class);
     Route::post('products/{productId}/add-to-cart', [ProductController::class, 'addToCartFromProduct']);

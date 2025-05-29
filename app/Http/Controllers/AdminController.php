@@ -15,7 +15,6 @@ use App\Models\Spot;
 
 class AdminController extends Controller
 {
-    // ==== USERS ====
     public function getUsers()
     {
         return response()->json(User::all());
@@ -28,7 +27,6 @@ class AdminController extends Controller
         return response()->json(['message' => 'Utilisateur supprimé']);
     }
 
-    // ==== POSTS ====
     public function getPosts()
     {
         return response()->json(Post::all());
@@ -41,7 +39,6 @@ class AdminController extends Controller
         return response()->json(['message' => 'Post supprimé']);
     }
 
-    // ==== PRODUCTS ====
     public function getProducts()
     {
         return response()->json(Product::all());
@@ -54,7 +51,6 @@ class AdminController extends Controller
         return response()->json(['message' => 'Produit supprimé']);
     }
 
-    // ==== CARTS ====
     public function getCarts()
     {
         return response()->json(Cart::all());
@@ -67,7 +63,6 @@ class AdminController extends Controller
         return response()->json(['message' => 'Panier supprimé']);
     }
 
-    // ==== EVENTS ====
     public function getEvents()
     {
         return response()->json(Event::all());
@@ -80,7 +75,6 @@ class AdminController extends Controller
         return response()->json(['message' => 'Événement supprimé']);
     }
 
-    // ==== TIPS ====
     public function getTips()
     {
         return response()->json(Tip::all());
@@ -93,7 +87,6 @@ class AdminController extends Controller
         return response()->json(['message' => 'Conseil supprimé']);
     }
 
-    // ==== SPOTS ====
     public function getSpots()
     {
         return response()->json(Spot::all());

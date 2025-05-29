@@ -18,7 +18,7 @@ class GroupMessageEvent implements ShouldBroadcastNow
 
     public function __construct(GroupMessage $message)
     {
-        $this->message = $message->load('sender.profile'); // charge les infos du sender
+        $this->message = $message->load('sender.profile'); // charge les infos mta3 sender
     }
 
     public function broadcastOn():Channel

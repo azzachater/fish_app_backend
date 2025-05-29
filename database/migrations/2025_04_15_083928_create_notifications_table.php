@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('sender_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('receiver_id')->constrained('users')->onDelete('cascade');
             $table->text('message');
-            $table->enum('type', ['private', 'group','spot','event','product']);
+            $table->enum('type', ['private', 'group','spot','event','product','post','comment','like']);
             $table->unsignedBigInteger('conversation_id')->nullable();
             $table->unsignedBigInteger('group_conversation_id')->nullable();
             $table->boolean('is_read')->default(false);

@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-//use App\Http\Controllers\Controller;
 use App\Models\Like;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // Pour gérer l'authentification
+use Illuminate\Support\Facades\Auth;
+use App\Models\Notification;
+use App\Events\NotificationEvent;
 
 class LikeController extends Controller
 {
@@ -15,28 +16,42 @@ class LikeController extends Controller
      * Liker ou unliker un post
      */
     public function likePost(Request $request, $postId)
-{
-    $post = Post::findOrFail($postId);
+    {
+        $post = Post::findOrFail($postId);
+        $user = Auth::user();
 
-    $like = Like::where('user_id', Auth::id())->where('post_id', $postId)->first();
+        $like = Like::where('user_id', $user->id)->where('post_id', $postId)->first();
 
-    if ($like) {
-        $like->delete();
-    } else {
-        Like::create([
-            'user_id' => Auth::id(),
-            'post_id' => $postId,
-        ]);
+        if ($like) {
+            // Suppression du like
+            $like->delete();
+        } else {
+            // Création du like
+            Like::create([
+                'user_id' => $user->id,
+                'post_id' => $postId,
+            ]);
+
+            // 🔔 Notification au propriétaire du post (s'il n'est pas celui qui like)
+            if ($post->user_id !== $user->id) {
+                $notif = Notification::create([
+                    'sender_id' => $user->id,
+                    'receiver_id' => $post->user_id,
+                    'message' => $user->name . ' a aimé votre post',
+                    'type' => 'like',
+                    'post_id' => $post->id,
+                ]);
+
+                broadcast(new NotificationEvent($notif))->toOthers();
+            }
+        }
+
+        // Charger la relation profile pour accéder à l'avatar
+        $post->load('user.profile')->append(['like_count', 'is_liked']);
+        $post->user->avatar = $post->user->profile->avatar ?? null;
+
+        return response()->json($post);
     }
-
-    // Charger la relation profile pour accéder à l'avatar
-    $post->load('user.profile')->append(['like_count', 'is_liked']);
-    $post->user->avatar = $post->user->profile->avatar ?? null;
-
-    return response()->json($post);
-}
-
-
 
     /**
      * Récupérer la liste des utilisateurs ayant liké un post (uniquement accessible au propriétaire du post)
