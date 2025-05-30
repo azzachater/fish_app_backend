@@ -13,10 +13,12 @@ class CartController extends Controller
 {
     use AuthorizesRequests;
 
-    // 🛒 Afficher les articles du panier
     public function index()
     {
-        $cartItems = Cart::where('user_id', Auth::id())->with('product')->get();
+        // Récupérer uniquement le panier de l'utilisateur connecté
+        $cartItems = Cart::where('user_id', Auth::id())
+            ->with('product')
+            ->get();
 
         $total = $cartItems->sum(function ($cart) {
             return $cart->product->price * $cart->quantity;
@@ -28,21 +30,25 @@ class CartController extends Controller
         ]);
     }
 
-
     public function addToCart(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
+            'user_id' => 'required|exists:users,id' // Ajout de la validation user_id
         ]);
 
         if ($validator->fails()) {
             return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 422);
         }
 
+        // Vérifier que l'user_id correspond à l'utilisateur connecté
+        if ($request->user_id != Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $product = Product::findOrFail($request->product_id);
 
-        // On vérifie le stock mais on ne décrémente pas
         if ($product->stock < $request->quantity) {
             return response()->json(['message' => 'Stock insuffisant'], 400);
         }
@@ -55,19 +61,18 @@ class CartController extends Controller
             $cart->update(['quantity' => $cart->quantity + $request->quantity]);
         } else {
             $cart = Cart::create([
-                'user_id' => Auth::id(),
+                'user_id' => Auth::id(), // Toujours utiliser l'ID de l'utilisateur connecté
                 'product_id' => $product->id,
                 'quantity' => $request->quantity,
             ]);
         }
 
-        // SUPPRIMER la ligne qui décrémente le stock
         return response()->json(['message' => 'Produit ajouté au panier', 'data' => $cart]);
     }
 
-    // 🔄 Mettre à jour la quantité d'un produit dans le panier
     public function update(Request $request, Cart $cart)
     {
+        // Vérification renforcée de l'appartenance du panier
         if ($cart->user_id !== Auth::id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
@@ -82,7 +87,6 @@ class CartController extends Controller
 
         $product = Product::findOrFail($cart->product_id);
 
-        // On vérifie seulement le stock, pas de modification
         if ($request->quantity > $product->stock) {
             return response()->json(['message' => 'Stock insuffisant'], 400);
         }
@@ -91,13 +95,13 @@ class CartController extends Controller
 
         return response()->json(['message' => 'Quantité mise à jour', 'data' => $cart]);
     }
+
     public function removeFromCart(Cart $cart)
     {
         if ($cart->user_id !== Auth::id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // SUPPRIMER la réincrémentation du stock
         $cart->delete();
 
         return response()->json(['message' => 'Produit retiré du panier']);

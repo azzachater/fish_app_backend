@@ -9,6 +9,8 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Message;
+use Illuminate\Support\Facades\Log;
+
 
 class MessageEvent implements ShouldBroadcastNow
 {
@@ -23,7 +25,7 @@ class MessageEvent implements ShouldBroadcastNow
 
     public function broadcastOn(): Channel
     {
-        \Log::info("Broadcasting message to channel: chat.chat.{$this->message->conversation_id}", [
+        Log::info("Broadcasting message to channel: chat.chat.{$this->message->conversation_id}", [
         'message_id' => $this->message->id,
         'content' => $this->message->content
     ]);

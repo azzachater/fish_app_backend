@@ -9,6 +9,8 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Support\Facades\Log;
+
 
 class GroupMessageEvent implements ShouldBroadcastNow
 {
@@ -18,12 +20,12 @@ class GroupMessageEvent implements ShouldBroadcastNow
 
     public function __construct(GroupMessage $message)
     {
-        $this->message = $message->load('sender.profile'); // charge les infos du sender
+        $this->message = $message->load('sender.profile'); // charge les infos mta3 sender
     }
 
     public function broadcastOn():Channel
     {
-        \Log::info("Broadcasting message to channel: group.{$this->message->group_conversation_id}", [
+        Log::info("Broadcasting message to channel: group.{$this->message->group_conversation_id}", [
             'message_id' => $this->message->id,
             'content' => $this->message->content
         ]);

@@ -112,4 +112,12 @@ class EventController extends Controller implements HasMiddleware
             'event' => $event->load(['user', 'participants'])
         ], 201);
     }
+    public function getParticipants(Event $event)
+{
+    $event->load('participants');
+
+    return response()->json([
+        'participants' => $event->participants
+    ]);
+}
 }

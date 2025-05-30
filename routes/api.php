@@ -31,6 +31,7 @@ use App\Http\Controllers\OrderController;
 | Authentification
 |--------------------------------------------------------------------------
 */
+
 Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -52,7 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Authentification
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
-    Route::get('/user', fn (Request $request) => $request->user());
+    Route::get('/user', fn(Request $request) => $request->user());
 
     // Utilisateurs
     Route::get('users', [AuthController::class, 'getAllUsers']);
@@ -92,7 +93,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Produits & Panier
     Route::apiResource('products', ProductController::class);
     Route::post('products/{productId}/add-to-cart', [ProductController::class, 'addToCartFromProduct']);
-    Route::get('orders',[ProductController::class, 'placeOrder']);
+    Route::get('orders', [ProductController::class, 'placeOrder']);
     Route::get('/products/{product}/check-stock/{quantity}', [ProductController::class, 'checkStock']);
 
     Route::prefix('cart')->group(function () {
@@ -119,7 +120,8 @@ Route::middleware('auth:sanctum')->group(function () {
         ->scoped()
         ->except('update');
     Route::post('events/{event}/participants', [ParticipantController::class, 'store']);
-    Route::post('/events/{event}/join', [EventController::class, 'joinEvent']);
+    Route::post('events/{event}/join', [EventController::class, 'joinEvent']);
+    Route::get('events/{event}/participants', [EventController::class, 'getParticipants']);
 
 
     // Conseils (Tips)
@@ -127,7 +129,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/tips/{id}', [TipController::class, 'update']);
 
     // Pêche (Logs & Spots)
-    Route::apiResource('logs', FishingLogController::class);
+    Route::prefix('logs')->group(function () {
+        Route::get('/', [FishingLogController::class, 'index']);
+        Route::post('/', [FishingLogController::class, 'store']); // Doit accepter POST
+        Route::get('/{id}', [FishingLogController::class, 'show']);
+        Route::put('/{id}', [FishingLogController::class, 'update']);
+        Route::delete('/{id}', [FishingLogController::class, 'destroy']);
+    });
     Route::apiResource('spots', SpotController::class);
     Route::post('spots/{id}/vote', [SpotController::class, 'vote']);
 

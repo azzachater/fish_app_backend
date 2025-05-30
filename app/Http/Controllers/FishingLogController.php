@@ -7,6 +7,7 @@ use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\FishingLog;
+use Illuminate\Support\Facades\Log;
 
 class FishingLogController extends Controller implements HasMiddleware
 {
@@ -38,9 +39,19 @@ class FishingLogController extends Controller implements HasMiddleware
     /**
      * Crée un nouveau journal de pêche.
      */
+    /**
+     * Crée un nouveau journal de pêche
+     */
     public function store(Request $request)
     {
-        $fields = $request->validate([
+        // Journalisation des données reçues
+        Log::info('Requête reçue pour créer un journal', [
+            'headers' => $request->headers->all(),
+            'data' => $request->all(),
+            'ip' => $request->ip()
+        ]);
+
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'date' => 'required|date',
             'time' => 'required|string|max:5',
@@ -50,11 +61,30 @@ class FishingLogController extends Controller implements HasMiddleware
             'notes' => 'nullable|string',
         ]);
 
-        $fields['user_id'] = Auth::id(); // Ajout manuel de l'ID utilisateur
+        $validated['user_id'] = Auth::id();
 
-        $fishingLog = FishingLog::create($fields);
+        try {
+            $log = FishingLog::create($validated);
 
-        return response()->json($fishingLog, 201);
+            Log::info('Journal créé avec succès', ['id' => $log->id]);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $log,
+                'message' => 'Journal créé avec succès'
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('Erreur création journal', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Erreur serveur',
+                'error' => env('APP_DEBUG') ? $e->getMessage() : null
+            ], 500);
+        }
     }
 
     /**

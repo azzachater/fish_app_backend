@@ -116,4 +116,14 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(Notification::class, 'receiver_id');
     }
+    public function events()
+    {
+        return $this->hasMany(Event::class);
+    }
+    public function eventsParticipating()
+{
+    return $this->belongsToMany(Event::class, 'participants')
+                ->using(Participant::class)
+                ->withTimestamps();
+}
 }

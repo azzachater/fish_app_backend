@@ -68,25 +68,34 @@ class ProductController extends Controller implements HasMiddleware
     {
         return new ProductResource($product);
     }
-    public function update(Request $request, $id)
+    // Dans ProductController.php
+    public function update(Request $request, Product $product)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
+        // Valider les données
+        $validated = $request->validate([
+            'name' => 'required|max:255',
+            'description' => 'nullable',
             'price' => 'required|numeric',
-            'unit' => 'required|string',
-            'image' => 'required|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'stock' => 'required|integer|min:0',
-            'category' => 'required|string',
+            'unit' => 'required',
+            'stock' => 'required|integer',
+            'category' => 'required',
+            'image' => 'nullable|image|max:2048',
         ]);
 
-        // Récupérer le produit de l'utilisateur connecté
-        $product = Product::where('user_id', Auth::id())->findOrFail($id);
+        // Mettre à jour les champs
+        $product->update($validated);
 
-        // Mettre à jour les données
-        $product->update($request->all());
+        // Gérer l'image si elle est fournie
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('products');
+            $product->image = $path;
+            $product->save();
+        }
 
-        return response()->json($product);
+        return response()->json([
+            'message' => 'Produit mis à jour avec succès',
+            'data' => $product
+        ]);
     }
     public function destroy(Product $product)
     {
