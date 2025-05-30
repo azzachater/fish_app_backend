@@ -1,6 +1,6 @@
 <?php
 
-/*namespace App\Http\Controllers;
+namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -31,4 +31,4 @@ class AdminAuthController extends Controller
         return response()->json(['message' => 'Déconnexion réussie']);
     }
 }
-*/
+

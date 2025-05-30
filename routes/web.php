@@ -26,3 +26,15 @@ Route::post('/email/verification-notification', function (Request $request) {
 
     return back()->with('message', 'Verification link sent!');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
+
+Route::get('/', function () {
+    return view('app'); // Vue de login
+});
+
+Route::get('/admin', function () {
+    return view('app'); // Redirige vers le dashboard après auth
+});
+
+Route::get('/admin/{any}', function () {
+    return view('app');
+})->where('any', '.*');

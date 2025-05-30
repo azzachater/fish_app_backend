@@ -25,6 +25,9 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\GroupChatController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminAuthController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -182,3 +185,40 @@ Route::apiResource('spots', SpotController::class)->only(['index', 'show']);
 Route::apiResource('tips', TipController::class)->only(['index', 'show']);
 Route::apiResource('products', ProductController::class)->only(['index', 'show']);
 Route::apiResource('events', EventController::class)->only(['index', 'show']);
+
+
+//admin
+Route::post('/admin/login', [AdminAuthController::class, 'login']);
+Route::middleware('auth:sanctum')->post('/admin/logout', [AdminAuthController::class, 'logout']);
+Route::prefix('admin')->middleware(['auth:sanctum'])->group(function () {
+    // Dashbord
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+
+    // Users
+    Route::get('/users', [AdminController::class, 'getUsers']);
+    Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
+
+    // Posts
+    Route::get('/posts', [AdminController::class, 'getPosts']);
+    Route::delete('/posts/{id}', [AdminController::class, 'deletePost']);
+
+    // Products
+    Route::get('/products', [AdminController::class, 'getProducts']);
+    Route::delete('/products/{id}', [AdminController::class, 'deleteProduct']);
+
+    // Carts
+    Route::get('/carts', [AdminController::class, 'getCarts']);
+    Route::delete('/carts/{id}', [AdminController::class, 'deleteCart']);
+
+    // Events
+    Route::get('/events', [AdminController::class, 'getEvents']);
+    Route::delete('/events/{id}', [AdminController::class, 'deleteEvent']);
+
+    // Tips
+    Route::get('/tips', [AdminController::class, 'getTips']);
+    Route::delete('/tips/{id}', [AdminController::class, 'deleteTip']);
+
+    // Spots
+    Route::get('/spots', [AdminController::class, 'getSpots']);
+    Route::delete('/spots/{id}', [AdminController::class, 'deleteSpot']);
+});

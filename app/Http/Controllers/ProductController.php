@@ -68,7 +68,6 @@ class ProductController extends Controller implements HasMiddleware
     {
         return new ProductResource($product);
     }
-    // Dans ProductController.php
     public function update(Request $request, Product $product)
     {
         // Valider les données
@@ -94,9 +93,7 @@ class ProductController extends Controller implements HasMiddleware
 
         return response()->json([
             'message' => 'Produit mis à jour avec succès',
-            'data' => $product
-        ]);
-    }
+            'data' => $product]);}
     public function destroy(Product $product)
     {
         Gate::authorize('modify', $product);
