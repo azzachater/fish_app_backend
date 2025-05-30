@@ -16,8 +16,7 @@ return new class extends Migration
                 $table->id();
                 $table->string('email')->index();
                 $table->string('code', 6);  // Code à 6 chiffres
-                $table->timestamp('expires_at');  // Ajout recommandé
-                $table->timestamps();
+                $table->timestamp('expires_at')->useCurrent()->addHour(); // Option 2: Valeur par défaut (1h)                $table->timestamps();
             });
         }
     }

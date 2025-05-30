@@ -30,7 +30,11 @@ class PasswordResetCodeController extends Controller
         // Crée ou met à jour le code
         PasswordResetCode::updateOrCreate(
             ['email' => $request->email],
-            ['code' => $code, 'created_at' => now()]
+            [
+                'code' => $code,
+                'expires_at' => now()->addHour(), // Expire dans 1 heure
+                'created_at' => now()
+            ]
         );
 
         // Envoie le mail
