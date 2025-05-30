@@ -9,10 +9,10 @@ class PasswordResetCode extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['email', 'code', 'created_at'];
+    protected $fillable = ['email', 'code', 'expires_at', 'created_at'];
 
-    public function isExpired(): bool
-    {
-        return Carbon::parse($this->created_at)->addMinutes(10)->isPast();
-    }
+    public function isExpired()
+{
+    return now()->gt($this->expires_at);
+}
 }

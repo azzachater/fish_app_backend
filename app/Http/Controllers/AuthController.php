@@ -32,13 +32,13 @@ class AuthController extends Controller
 }
     public function getAllUsers()
 {
-    $users = User::with('profile')->get(); 
+    $users = User::with('profile')->get(); // <-- charge aussi les profils
     return response()->json($users, 200);
 }
 
 public function CheckUser($id)
 {
-    $user = User::with('profile')->find($id); 
+    $user = User::with('profile')->find($id); // charge aussi le profil
     if (!$user) {
         return response()->json(['error' => 'User not found'], 404);
     }
@@ -64,8 +64,8 @@ public function register(Request $request)
         'verification_code' => $verificationCode,
         'verification_code_expires_at' => Carbon::now()->addHours(24),
     ]);
-    // Création automatiquement profile
-    $profile = $user->profile()->create(); 
+    // 💡 Création automatique du profil lié à l'utilisateur
+    $profile = $user->profile()->create(); // utilisera les valeurs par défaut définies dans ta migration
 
     // Créer un token pour le user
     $token = $user->createToken('auth_token')->plainTextToken;
